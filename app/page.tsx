@@ -180,17 +180,17 @@ export default function HomePage() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+      <main className="flex-1 w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         
         {/* Hero Banner with WebMCP Architecture Highlights */}
-        <section className={`relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 border border-slate-800 p-6 sm:p-8 shadow-2xl ${
+        <section className={`relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 border border-slate-800/90 p-6 sm:p-7 shadow-2xl ${
           grandmaMode ? 'p-10 border-2 border-amber-400' : ''
         }`}>
-          <div className="relative z-10 max-w-3xl space-y-3">
+          <div className="relative z-10 max-w-4xl space-y-3">
             
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-mcp-purple/20 border border-mcp-purple/40 text-mcp-purple text-xs font-mono font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>The WebMCP Challenge • Production App Router Implementation</span>
+              <span>The WebMCP Challenge • Production Next.js App Router Implementation</span>
             </div>
 
             <h2 className={`font-black text-slate-100 tracking-tight ${
@@ -202,23 +202,23 @@ export default function HomePage() {
             <p className={`text-slate-300 leading-relaxed ${
               grandmaMode ? 'text-base font-medium' : 'text-sm'
             }`}>
-              Natively integrated with the W3C <code className="text-mcp-cyan bg-slate-950/80 px-1.5 py-0.5 rounded font-mono">document.modelContext</code> standard. 
-              Autonomous browser agents and human operators interact with the exact same catalog, forms, and custom event bridge in real-time.
+              Natively integrated with the emerging W3C <code className="text-mcp-cyan bg-slate-950/80 px-1.5 py-0.5 rounded font-mono border border-slate-800">document.modelContext</code> standard. 
+              Autonomous browser agents and human plant operators interact with the exact same catalog, telemetry, and custom event bridge in real-time.
             </p>
 
             {/* Architecture Highlights */}
-            <div className="pt-2 flex flex-wrap items-center gap-2.5 text-xs font-mono">
-              <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>3 Tools Registered</span>
+            <div className="pt-1 flex flex-wrap items-center gap-2.5 text-xs font-mono">
+              <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-2 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="font-bold text-emerald-300">5 WebMCP Tools Registered</span>
               </span>
 
-              <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-1.5">
+              <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-1.5 shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                 <span>CustomEvent('webmcp-action')</span>
               </span>
 
-              <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-1.5">
+              <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-1.5 shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                 <span>Grandma Accessible Mode</span>
               </span>
@@ -227,7 +227,7 @@ export default function HomePage() {
         </section>
 
         {/* Dual Layout: Catalog & RFQ Form */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-7 items-start">
           
           {/* Left Column: Interactive Catalog Grid (7 cols) */}
           <div className="lg:col-span-7 space-y-4">

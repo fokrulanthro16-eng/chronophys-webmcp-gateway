@@ -33,7 +33,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   };
 
   return (
-    <div className={`bg-slate-900/95 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-5 ${
+    <div className={`bg-slate-900/95 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-5 transition-all duration-300 ${
+      lastAutofillSource
+        ? 'border-2 border-emerald-400 ring-2 ring-emerald-400/80 shadow-[0_0_35px_rgba(52,211,153,0.28)]'
+        : 'border border-slate-800'
+    } ${
       grandmaMode ? 'p-8 border-2 border-slate-600' : ''
     }`}>
       
@@ -51,9 +55,9 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         </div>
 
         {lastAutofillSource && (
-          <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-600 animate-pulse flex items-center space-x-1">
-            <Sparkles className="w-3 h-3" />
-            <span>Agent Autofilled</span>
+          <span className="text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-400 animate-pulse flex items-center space-x-1.5 shadow-[0_0_15px_rgba(52,211,153,0.4)]">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Agent Autofilled ({lastAutofillSource})</span>
           </span>
         )}
       </div>
@@ -87,7 +91,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               value={formData.customerName || ''}
               onChange={(e) => onFormChange({ ...formData, customerName: e.target.value })}
               placeholder="e.g. John Matrix"
-              className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-mcp-purple transition ${
+              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs placeholder-slate-500 focus:outline-none transition ${
+                lastAutofillSource
+                  ? 'border-emerald-500/70 text-emerald-200 ring-1 ring-emerald-500/30'
+                  : 'border-slate-700 text-slate-100 focus:border-mcp-purple'
+              } ${
                 grandmaMode ? 'text-base font-bold py-3 border-2' : ''
               }`}
             />
@@ -106,7 +114,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               value={formData.email || ''}
               onChange={(e) => onFormChange({ ...formData, email: e.target.value })}
               placeholder="e.g. j.matrix@val-verde.mil"
-              className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-mcp-purple transition ${
+              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs placeholder-slate-500 focus:outline-none transition ${
+                lastAutofillSource
+                  ? 'border-emerald-500/70 text-emerald-200 ring-1 ring-emerald-500/30'
+                  : 'border-slate-700 text-slate-100 focus:border-mcp-purple'
+              } ${
                 grandmaMode ? 'text-base font-bold py-3 border-2' : ''
               }`}
             />
@@ -127,7 +139,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               value={formData.company || ''}
               onChange={(e) => onFormChange({ ...formData, company: e.target.value })}
               placeholder="e.g. Matrix Energy Turbines"
-              className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-mcp-purple transition ${
+              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs placeholder-slate-500 focus:outline-none transition ${
+                lastAutofillSource
+                  ? 'border-emerald-500/70 text-emerald-200 ring-1 ring-emerald-500/30'
+                  : 'border-slate-700 text-slate-100 focus:border-mcp-purple'
+              } ${
                 grandmaMode ? 'text-base font-bold py-3 border-2' : ''
               }`}
             />
@@ -143,7 +159,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             <select
               value={formData.urgencyLevel || 'standard'}
               onChange={(e) => onFormChange({ ...formData, urgencyLevel: e.target.value as any })}
-              className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-mcp-purple transition ${
+              className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs focus:outline-none transition ${
+                lastAutofillSource
+                  ? 'border-emerald-500/70 text-emerald-200 ring-1 ring-emerald-500/30'
+                  : 'border-slate-700 text-slate-100 focus:border-mcp-purple'
+              } ${
                 grandmaMode ? 'text-base font-bold py-3 border-2' : ''
               }`}
             >
@@ -167,7 +187,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             value={formData.notes || ''}
             onChange={(e) => onFormChange({ ...formData, notes: e.target.value })}
             placeholder="Describe motor shaft RPM, vibration velocity v_RMS, bearing model, or ISO Zone classification..."
-            className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-mcp-purple transition ${
+            className={`w-full bg-slate-950 border rounded-xl px-3.5 py-2 text-xs placeholder-slate-500 focus:outline-none transition ${
+              lastAutofillSource
+                ? 'border-emerald-500/70 text-emerald-200 ring-1 ring-emerald-500/30'
+                : 'border-slate-700 text-slate-100 focus:border-mcp-purple'
+            } ${
               grandmaMode ? 'text-base font-bold py-3 border-2' : ''
             }`}
           />

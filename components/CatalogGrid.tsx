@@ -119,20 +119,20 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
               <div
                 key={item.id}
                 onClick={() => onSelectItem(item)}
-                className={`group relative bg-slate-900/90 border rounded-2xl p-5 shadow-lg cursor-pointer transition-all duration-200 flex flex-col justify-between ${
+                className={`group relative bg-slate-900/90 border rounded-2xl p-5 shadow-xl cursor-pointer transition-all duration-300 flex flex-col justify-between ${
                   isSelected
-                    ? 'border-mcp-purple bg-gradient-to-b from-slate-900 to-indigo-950/40 ring-2 ring-mcp-purple shadow-mcp-purple/20'
-                    : 'border-slate-800 hover:border-slate-700 hover:bg-slate-850'
+                    ? 'border-emerald-400 bg-gradient-to-b from-slate-900 to-emerald-950/30 ring-2 ring-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.35)] animate-[pulse_2s_ease-in-out_infinite]'
+                    : 'border-slate-800/90 hover:border-slate-700 hover:bg-slate-850'
                 } ${grandmaMode ? 'p-6 border-2 border-slate-600' : ''}`}
               >
                 {/* Top Badge & Rating */}
                 <div className="flex items-center justify-between gap-2 mb-2.5">
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                     {item.category}
                   </span>
 
                   {item.badge && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center space-x-1">
+                    <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 flex items-center space-x-1">
                       <Sparkles className="w-2.5 h-2.5" />
                       <span>{item.badge}</span>
                     </span>
