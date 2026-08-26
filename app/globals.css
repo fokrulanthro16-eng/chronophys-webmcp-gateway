@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #020617;
+  --foreground: #f8fafc;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  min-height: 100vh;
+}
+
+/* Grandma Accessible Mode (High-contrast, Large Targets) */
+.grandma-accessible-mode {
+  font-size: 1.15rem !important;
+}
+
+.grandma-accessible-mode button,
+.grandma-accessible-mode input,
+.grandma-accessible-mode select,
+.grandma-accessible-mode textarea {
+  min-height: 48px !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+}
+
+.grandma-accessible-mode h1,
+.grandma-accessible-mode h2,
+.grandma-accessible-mode h3,
+.grandma-accessible-mode h4 {
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
