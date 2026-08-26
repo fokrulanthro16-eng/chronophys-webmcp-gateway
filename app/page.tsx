@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
+import { IndustrialCanvasStream } from '@/components/IndustrialCanvasStream';
+import { LiveTelemetryPanel } from '@/components/LiveTelemetryPanel';
+import { AgentLiveTerminal } from '@/components/AgentLiveTerminal';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { BookingForm } from '@/components/BookingForm';
 import { AgentInspector } from '@/components/AgentInspector';
@@ -21,7 +24,10 @@ import {
   Zap, 
   Terminal, 
   Layers, 
-  ArrowUpRight 
+  Radio, 
+  Sliders,
+  Activity,
+  ShieldAlert
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -31,9 +37,15 @@ export default function HomePage() {
   const [keyword, setKeyword] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>('prod-001');
   const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(false);
   const [lastAutofillSource, setLastAutofillSource] = useState<string | null>(null);
+
+  // Dynamic Telemetry State
+  const [faultMode, setFaultMode] = useState<'normal' | 'bearing_fault' | 'unbalance' | 'misalignment'>('normal');
+  const [vRms, setVRms] = useState<number>(0.42);
+  const [dominantFreq, setDominantFreq] = useState<number>(30.0);
+  const [shaftRpm, setShaftRpm] = useState<number>(1800);
 
   const [formData, setFormData] = useState<AutofillPayload>({
     customerName: '',
@@ -42,6 +54,7 @@ export default function HomePage() {
     serviceCategory: 'all',
     urgencyLevel: 'standard',
     notes: '',
+    itemId: 'prod-001'
   });
 
   // Filter items based on active state
@@ -69,7 +82,7 @@ export default function HomePage() {
     return CATALOG_DATA.find(i => i.id === selectedItemId) || null;
   }, [selectedItemId]);
 
-  // Bridge Custom Browser Events ('webmcp-action') to React UI State
+  // Bridge Custom Browser Events ('webmcp-action') to React UI State & Telemetry
   useEffect(() => {
     const handleWebMCPAction = (event: Event) => {
       const customEvt = event as CustomEvent<WebMCPActionEventDetail>;
@@ -103,6 +116,17 @@ export default function HomePage() {
             setSelectedItemId(payload.itemId);
           }
           setLastAutofillSource(source || 'WebMCP Agent');
+
+          // Dynamically modulate telemetry if bearing fault or trip notes injected
+          if (payload.urgencyLevel === 'emergency' || (payload.notes && payload.notes.includes('bearing'))) {
+            setFaultMode('bearing_fault');
+            setVRms(7.85);
+            setDominantFreq(142.5);
+          } else {
+            setFaultMode('normal');
+            setVRms(0.42);
+            setDominantFreq(30.0);
+          }
           break;
         }
 
@@ -123,7 +147,10 @@ export default function HomePage() {
           setKeyword('');
           setSelectedCategory('all');
           setInStockOnly(false);
-          setSelectedItemId(null);
+          setSelectedItemId('prod-001');
+          setFaultMode('normal');
+          setVRms(0.42);
+          setDominantFreq(30.0);
           setFormData({
             customerName: '',
             email: '',
@@ -131,6 +158,7 @@ export default function HomePage() {
             serviceCategory: 'all',
             urgencyLevel: 'standard',
             notes: '',
+            itemId: 'prod-001'
           });
           setLastAutofillSource(null);
           break;
@@ -171,98 +199,112 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950">
+    <div className="w-full min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col selection:bg-mcp-purple selection:text-white">
       
-      {/* Top Navbar */}
+      {/* Top Header Navbar */}
       <Navbar 
         onOpenInspector={() => setIsInspectorOpen(!isInspectorOpen)} 
         isInspectorOpen={isInspectorOpen} 
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      {/* Main Full-Width Bento Grid Dashboard */}
+      <main className="flex-1 w-full px-3 sm:px-5 py-3 space-y-4">
         
-        {/* Hero Banner with WebMCP Architecture Highlights */}
-        <section className={`relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/70 to-slate-900 border border-slate-800/90 p-6 sm:p-7 shadow-2xl ${
-          grandmaMode ? 'p-10 border-2 border-amber-400' : ''
-        }`}>
-          <div className="relative z-10 max-w-4xl space-y-3">
-            
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-mcp-purple/20 border border-mcp-purple/40 text-mcp-purple text-xs font-mono font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>The WebMCP Challenge • Production Next.js App Router Implementation</span>
+        {/* Top Telemetry & WebMCP Status Ribbon */}
+        <section className="bg-slate-900/70 border border-slate-800/80 rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-lg font-mono text-xs">
+          
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              <span className="font-bold text-slate-100">TELEMETRY RIG:</span>
+              <span className="text-emerald-400 font-bold">1800 RPM TURBOPUMP #4</span>
             </div>
-
-            <h2 className={`font-black text-slate-100 tracking-tight ${
-              grandmaMode ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'
-            }`}>
-              WebMCP Agent-Ready Industrial Platform
-            </h2>
-
-            <p className={`text-slate-300 leading-relaxed ${
-              grandmaMode ? 'text-base font-medium' : 'text-sm'
-            }`}>
-              Natively integrated with the emerging W3C <code className="text-mcp-cyan bg-slate-950/80 px-1.5 py-0.5 rounded font-mono border border-slate-800">document.modelContext</code> standard. 
-              Autonomous browser agents and human plant operators interact with the exact same catalog, telemetry, and custom event bridge in real-time.
-            </p>
-
-            {/* Architecture Highlights */}
-            <div className="pt-1 flex flex-wrap items-center gap-2.5 text-xs font-mono">
-              <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-2 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="font-bold text-emerald-300">5 WebMCP Tools Registered</span>
-              </span>
-
-              <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                <span>CustomEvent('webmcp-action')</span>
-              </span>
-
-              <span className="px-3 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-slate-300 flex items-center space-x-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                <span>Grandma Accessible Mode</span>
+            <span className="text-slate-600">|</span>
+            <div className="text-slate-400 hidden md:inline">
+              ISO Zone: <span className={faultMode === 'bearing_fault' ? 'text-rose-400 font-black' : 'text-emerald-400 font-bold'}>
+                {faultMode === 'bearing_fault' ? 'ZONE D (CRITICAL)' : 'ZONE A (OPTIMAL)'}
               </span>
             </div>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-400">DSP Modes:</span>
+            <button
+              onClick={() => { setFaultMode('normal'); setVRms(0.42); setDominantFreq(30.0); }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                faultMode === 'normal' ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-slate-950 text-slate-400'
+              }`}
+            >
+              1X Baseline
+            </button>
+            <button
+              onClick={() => { setFaultMode('unbalance'); setVRms(2.45); setDominantFreq(30.0); }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                faultMode === 'unbalance' ? 'bg-amber-950 text-amber-300 border border-amber-700' : 'bg-slate-950 text-slate-400'
+              }`}
+            >
+              1X Unbalance
+            </button>
+            <button
+              onClick={() => { setFaultMode('bearing_fault'); setVRms(7.85); setDominantFreq(142.5); }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                faultMode === 'bearing_fault' ? 'bg-rose-950 text-rose-300 border border-rose-600 animate-pulse' : 'bg-slate-950 text-slate-400'
+              }`}
+            >
+              BPFO Fault (Trip)
+            </button>
+          </div>
+
         </section>
 
-        {/* Dual Layout: Catalog & RFQ Form */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-7 items-start">
+        {/* 3-Column Enterprise Bento Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           
-          {/* Left Column: Interactive Catalog Grid (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <div>
-                <h3 className="text-base font-bold text-slate-100">Equipment & Service Catalog</h3>
-                <p className="text-xs text-slate-400">Filterable via UI controls or <code className="text-mcp-purple">query_catalog</code> tool</p>
-              </div>
-              <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                {filteredItems.length} of {CATALOG_DATA.length} Available
-              </span>
-            </div>
-
-            <CatalogGrid
-              items={filteredItems}
-              keyword={keyword}
-              onKeywordChange={setKeyword}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedItemId={selectedItemId}
-              onSelectItem={handleSelectItem}
-              inStockOnly={inStockOnly}
-              onToggleInStock={setInStockOnly}
+          {/* Column 1: Optical Phase-EVM Stream & Agent Terminal (4 cols) */}
+          <div className="lg:col-span-4 space-y-4">
+            <IndustrialCanvasStream 
+              faultMode={faultMode}
+              vRms={vRms}
+              dominantFreq={dominantFreq}
             />
+
+            <AgentLiveTerminal />
           </div>
 
-          {/* Right Column: RFQ Booking Form (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <div>
-                <h3 className="text-base font-bold text-slate-100">Automated Dispatch & RFQ</h3>
-                <p className="text-xs text-slate-400">Actionable via UI or <code className="text-emerald-400">execute_action</code> tool</p>
-              </div>
-            </div>
+          {/* Column 2: Live FFT Modal Telemetry & Mechanical Faults (4 cols) */}
+          <div className="lg:col-span-4 space-y-4">
+            <LiveTelemetryPanel
+              faultMode={faultMode}
+              vRms={vRms}
+              dominantFreq={dominantFreq}
+              shaftRpm={shaftRpm}
+            />
 
+            {/* Equipment Catalog Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-sm font-bold text-slate-200">Industrial Sensor & Digital Twin Catalog</h3>
+                <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                  {filteredItems.length} Available
+                </span>
+              </div>
+
+              <CatalogGrid
+                items={filteredItems}
+                keyword={keyword}
+                onKeywordChange={setKeyword}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+                selectedItemId={selectedItemId}
+                onSelectItem={handleSelectItem}
+                inStockOnly={inStockOnly}
+                onToggleInStock={setInStockOnly}
+              />
+            </div>
+          </div>
+
+          {/* Column 3: Enterprise RFQ Dispatch & AI Agent Form (4 cols) */}
+          <div className="lg:col-span-4 space-y-4">
             <BookingForm
               selectedItem={selectedItem}
               formData={formData}
@@ -272,7 +314,8 @@ export default function HomePage() {
               lastAutofillSource={lastAutofillSource}
             />
           </div>
-        </section>
+
+        </div>
 
       </main>
 
@@ -281,14 +324,6 @@ export default function HomePage() {
         isOpen={isInspectorOpen} 
         onClose={() => setIsInspectorOpen(false)} 
       />
-
-      {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 px-4 sm:px-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>The WebMCP Challenge • Built for W3C <code className="text-slate-400">document.modelContext</code> Standard</span>
-          <span>Grandma-Theory Accessible • Next.js App Router • Tailwind CSS</span>
-        </div>
-      </footer>
 
     </div>
   );
