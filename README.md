@@ -9,6 +9,17 @@
 
 ---
 
+## 📸 Visual Previews & Agent Inspector
+
+| Normal & Telemetry View | Grandma Accessibility Mode |
+| :---: | :---: |
+| ![Dashboard Preview](./public/screenshots/dashboard-preview.png) | ![Grandma Mode](./public/screenshots/grandma-mode.png) |
+
+### Agent Activity Inspector
+![Agent Inspector](./public/screenshots/agent-inspector.png)
+
+---
+
 ## 💡 The Problem & The WebMCP Solution
 
 * **Traditional AI Web Automation:** Brittle DOM scraping, random CSS selector lookups, slow visual parsing, and high failure rates on complex industrial dashboards.
