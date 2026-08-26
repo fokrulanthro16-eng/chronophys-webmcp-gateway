@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { IndustrialCanvasStream } from '@/components/IndustrialCanvasStream';
+import { DualVisionCanvas } from '@/components/DualVisionCanvas';
 import { LiveTelemetryPanel } from '@/components/LiveTelemetryPanel';
+import { Ods3dWireframe } from '@/components/Ods3dWireframe';
 import { AgentLiveTerminal } from '@/components/AgentLiveTerminal';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { BookingForm } from '@/components/BookingForm';
@@ -11,6 +12,8 @@ import { AgentInspector } from '@/components/AgentInspector';
 import { RoiCostCard } from '@/components/RoiCostCard';
 import { VoiceAgentOverlay } from '@/components/VoiceAgentOverlay';
 import { EnterprisePricingModal } from '@/components/EnterprisePricingModal';
+import { AiSpecialistModal } from '@/components/AiSpecialistModal';
+import { PdfReportModal } from '@/components/PdfReportModal';
 import { useWebMCP } from '@/components/WebMCPProvider';
 import { CATALOG_DATA } from '@/lib/mock-data';
 import { 
@@ -32,7 +35,8 @@ import {
   Activity,
   ShieldAlert,
   Download,
-  FileCheck
+  FileCheck,
+  Video
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -46,6 +50,11 @@ export default function HomePage() {
   const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(false);
   const [isPricingOpen, setIsPricingOpen] = useState<boolean>(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [autoLockEnabled, setAutoLockEnabled] = useState<boolean>(true);
+  const [alpha, setAlpha] = useState<number>(45);
   const [lastAutofillSource, setLastAutofillSource] = useState<string | null>(null);
   const [activeAuditTicket, setActiveAuditTicket] = useState<{ id: string; hash: string; analyst: string } | null>(null);
 
@@ -89,6 +98,11 @@ export default function HomePage() {
   const selectedItem = useMemo(() => {
     return CATALOG_DATA.find(i => i.id === selectedItemId) || null;
   }, [selectedItemId]);
+
+  const handleTriggerRecordDemo = () => {
+    setIsRecording(true);
+    setTimeout(() => setIsRecording(false), 30000);
+  };
 
   // Bridge Custom Browser Events ('webmcp-action') to React UI State & Telemetry
   useEffect(() => {
@@ -164,6 +178,34 @@ export default function HomePage() {
           break;
         }
 
+        case 'RECORD_DEMO': {
+          setIsRecording(true);
+          const dur = (payload.duration || 30) * 1000;
+          setTimeout(() => setIsRecording(false), dur);
+          break;
+        }
+
+        case 'GENERATE_PDF_REPORT': {
+          setIsPdfModalOpen(true);
+          break;
+        }
+
+        case 'TOGGLE_AI_SPECIALIST': {
+          setIsAiModalOpen(payload.open !== false);
+          break;
+        }
+
+        case 'AUTO_LOCK_COMPONENTS': {
+          setAutoLockEnabled(payload.enableTracking !== false);
+          break;
+        }
+
+        case 'SET_EVM_PARAMETERS': {
+          if (payload.alpha !== undefined) setAlpha(payload.alpha);
+          if (payload.shaftRpm !== undefined) setShaftRpm(payload.shaftRpm);
+          break;
+        }
+
         case 'CLEAR_FORM': {
           setFormData({
             customerName: '',
@@ -187,6 +229,8 @@ export default function HomePage() {
           setVRms(0.42);
           setDominantFreq(30.0);
           setShaftRpm(1800);
+          setAlpha(45);
+          setAutoLockEnabled(true);
           setFormData({
             customerName: '',
             email: '',
@@ -237,7 +281,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col selection:bg-mcp-purple selection:text-white">
+    <div className="w-full min-h-screen bg-[#080b11] text-slate-100 flex flex-col selection:bg-mcp-purple selection:text-white">
       
       {/* Top Header Navbar */}
       <Navbar 
@@ -245,6 +289,9 @@ export default function HomePage() {
         isInspectorOpen={isInspectorOpen}
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenVoice={() => setIsVoiceOpen(true)}
+        onRecordDemo={handleTriggerRecordDemo}
+        onOpenAiSpecialist={() => setIsAiModalOpen(true)}
+        onOpenPdfReport={() => setIsPdfModalOpen(true)}
       />
 
       {/* Audit Certificate Ready Banner */}
@@ -260,11 +307,11 @@ export default function HomePage() {
             </div>
           </div>
           <button
-            onClick={() => window.print()}
+            onClick={() => setIsPdfModalOpen(true)}
             className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl flex items-center space-x-1.5 transition shadow"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Print Audit Receipt</span>
+            <span>Open PDF Audit</span>
           </button>
         </div>
       )}
@@ -322,23 +369,34 @@ export default function HomePage() {
         {/* 3-Column Enterprise Bento Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           
-          {/* Column 1: Optical Phase-EVM Stream & Agent Terminal (4 cols) */}
+          {/* Column 1: Dual Vision Optical Rig & Agent Terminal (4 cols) */}
           <div className="lg:col-span-4 space-y-4">
-            <IndustrialCanvasStream 
+            <DualVisionCanvas 
               faultMode={faultMode}
               vRms={vRms}
               dominantFreq={dominantFreq}
+              alpha={alpha}
+              onAlphaChange={setAlpha}
+              autoLockEnabled={autoLockEnabled}
+              onToggleAutoLock={() => setAutoLockEnabled(!autoLockEnabled)}
+              isRecording={isRecording}
             />
 
             <AgentLiveTerminal />
           </div>
 
-          {/* Column 2: Live FFT Modal Telemetry & Mechanical Faults (4 cols) */}
+          {/* Column 2: Live FFT Modal Telemetry, 3D ODS & Catalog (4 cols) */}
           <div className="lg:col-span-4 space-y-4">
             <LiveTelemetryPanel
               faultMode={faultMode}
               vRms={vRms}
               dominantFreq={dominantFreq}
+              shaftRpm={shaftRpm}
+            />
+
+            <Ods3dWireframe
+              faultMode={faultMode}
+              vRms={vRms}
               shaftRpm={shaftRpm}
             />
 
@@ -402,6 +460,24 @@ export default function HomePage() {
       <EnterprisePricingModal
         isOpen={isPricingOpen}
         onClose={() => setIsPricingOpen(false)}
+      />
+
+      {/* Gemini AI Vibration Specialist Modal */}
+      <AiSpecialistModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        faultMode={faultMode}
+        vRms={vRms}
+        dominantFreq={dominantFreq}
+      />
+
+      {/* ISO 17025 PDF Compliance Report Modal */}
+      <PdfReportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        faultMode={faultMode}
+        vRms={vRms}
+        dominantFreq={dominantFreq}
       />
 
     </div>

@@ -19,13 +19,19 @@ interface NavbarProps {
   isInspectorOpen: boolean;
   onOpenPricing?: () => void;
   onOpenVoice?: () => void;
+  onRecordDemo?: () => void;
+  onOpenAiSpecialist?: () => void;
+  onOpenPdfReport?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
   onOpenInspector, 
   isInspectorOpen,
   onOpenPricing,
-  onOpenVoice 
+  onOpenVoice,
+  onRecordDemo,
+  onOpenAiSpecialist,
+  onOpenPdfReport
 }) => {
   const { isReady, registeredTools, grandmaMode, toggleGrandmaMode, activeActionEffect } = useWebMCP();
 
@@ -70,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 ChronoPhys <span className="text-transparent bg-clip-text bg-gradient-to-r from-mcp-cyan to-indigo-400">WebMCP</span>
               </h1>
               <span className="hidden sm:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-mcp-purple/20 text-mcp-purple border border-mcp-purple/40 font-bold">
-                v4.0 Enterprise
+                Enterprise CV Rig
               </span>
             </div>
             <p className="text-[11px] text-slate-400">Autonomous Closed-Loop Industrial Edge • W3C WebMCP Standard</p>
@@ -89,18 +95,54 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
 
           {/* WebMCP Bridge Status Pill */}
-          <div className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-mono shadow-sm flex-shrink-0">
+          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs font-mono shadow-sm flex-shrink-0">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
             <span className="text-slate-300 font-semibold hidden md:inline">
-              WebMCP Bridge:
+              WebMCP Standard:
             </span>
             <span className="text-emerald-400 font-bold">
-              Active ({registeredTools.length || 7} Tools Ready)
+              Connected & Listening ({registeredTools.length || 12} Tools)
             </span>
           </div>
+
+          {/* Record 30s Demo Button */}
+          {onRecordDemo && (
+            <button
+              onClick={onRecordDemo}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/90 hover:bg-rose-900 border border-rose-700/80 text-rose-200 text-xs font-bold transition shadow-sm flex-shrink-0"
+              title="Record 30-second live multi-modal diagnostic session"
+            >
+              <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+              <span className="hidden sm:inline">Record 30s Demo</span>
+            </button>
+          )}
+
+          {/* AI Specialist Modal Trigger */}
+          {onOpenAiSpecialist && (
+            <button
+              onClick={onOpenAiSpecialist}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-900 border border-indigo-700/80 text-indigo-200 text-xs font-bold transition shadow-sm flex-shrink-0"
+              title="Open Gemini AI Vibration Diagnostic Specialist"
+            >
+              <span>🤖</span>
+              <span className="hidden sm:inline">AI Specialist</span>
+            </button>
+          )}
+
+          {/* PDF Report Generator Trigger */}
+          {onOpenPdfReport && (
+            <button
+              onClick={onOpenPdfReport}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold transition shadow-sm flex-shrink-0"
+              title="Generate certified ISO 17025 PDF compliance report"
+            >
+              <span>📄</span>
+              <span className="hidden sm:inline">PDF Report</span>
+            </button>
+          )}
 
           {/* Voice Agent Trigger Button */}
           {onOpenVoice && (
@@ -110,41 +152,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Hands-free plant voice-to-agent interface"
             >
               <span className="text-sm">🎙️</span>
-              <span className="hidden sm:inline">Voice Agent</span>
-            </button>
-          )}
-
-          {/* Quick Action: Simulate Normal State */}
-          <button
-            onClick={handleSimulateNormal}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 border border-emerald-700/70 text-xs font-bold transition shadow-sm flex-shrink-0"
-            title="Simulate normal ISO Zone A baseline operation via WebMCP agent"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span className="hidden sm:inline">Simulate Normal State</span>
-            <span className="sm:hidden">Normal</span>
-          </button>
-
-          {/* Quick Action: Simulate Bearing Fault (Trip Trigger) */}
-          <button
-            onClick={handleSimulateBearingFault}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900/90 text-rose-200 border border-rose-700/80 text-xs font-bold transition shadow-sm flex-shrink-0 animate-pulse"
-            title="Simulate high-frequency bearing fault and SIL-3 trip trigger"
-          >
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-            <span className="hidden sm:inline">Simulate Bearing Fault (Trip)</span>
-            <span className="sm:hidden">Trip</span>
-          </button>
-
-          {/* Commercial Pricing Modal Trigger */}
-          {onOpenPricing && (
-            <button
-              onClick={onOpenPricing}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-900 border border-indigo-700/80 text-indigo-200 text-xs font-bold transition shadow-sm flex-shrink-0"
-              title="View enterprise commercial deployment packages"
-            >
-              <span>💼</span>
-              <span className="hidden md:inline">Plant Pricing</span>
+              <span className="hidden sm:inline">Voice</span>
             </button>
           )}
 
@@ -159,7 +167,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Toggle high-contrast Grandma Mode accessibility"
           >
             <span>👵</span>
-            <span className="hidden md:inline">{grandmaMode ? 'Grandma Active' : 'Grandma Mode'}</span>
+            <span className="hidden md:inline">{grandmaMode ? 'Grandma Active' : 'Grandma'}</span>
           </button>
 
           {/* Open Inspector Button */}
