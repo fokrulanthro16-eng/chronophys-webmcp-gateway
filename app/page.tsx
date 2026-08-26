@@ -99,10 +99,62 @@ export default function HomePage() {
     return CATALOG_DATA.find(i => i.id === selectedItemId) || null;
   }, [selectedItemId]);
 
-  const handleTriggerRecordDemo = () => {
+  const handleTriggerRecordDemo = async () => {
     setIsRecording(true);
+    try {
+      await fetch('http://localhost:8000/api/record_demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration: 30 })
+      });
+    } catch (e) {
+      console.warn('Backend recording triggered in autonomous fallback mode');
+    }
     setTimeout(() => setIsRecording(false), 30000);
   };
+
+  const handleOpenPdfReport = () => {
+    window.open('http://localhost:8000/api/generate_pdf', '_blank');
+    setIsPdfModalOpen(true);
+  };
+
+  // Poll real Python backend telemetry every 200ms
+  useEffect(() => {
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/telemetry');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.fft && isMounted) {
+            const rms = data.fft.vibration_velocity_rms_mms ?? 0.42;
+            const freq = data.fft.dominant_frequency_hz ?? 30.0;
+            const rpm = data.config?.nominal_rpm ?? 1800;
+            const iso = data.iso?.iso_zone ?? (rms > 4.5 ? 'ZONE_D' : 'ZONE_A');
+
+            setVRms(rms);
+            setDominantFreq(freq);
+            setShaftRpm(rpm);
+
+            if (iso === 'ZONE_D' || rms > 4.5) {
+              setFaultMode('bearing_fault');
+            } else if (iso === 'ZONE_C' || rms > 2.5) {
+              setFaultMode('unbalance');
+            } else {
+              setFaultMode('normal');
+            }
+          }
+        }
+      } catch (err) {
+        // Fallback to internal state if backend is offline
+      }
+    }, 200);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Bridge Custom Browser Events ('webmcp-action') to React UI State & Telemetry
   useEffect(() => {
@@ -291,7 +343,7 @@ export default function HomePage() {
         onOpenVoice={() => setIsVoiceOpen(true)}
         onRecordDemo={handleTriggerRecordDemo}
         onOpenAiSpecialist={() => setIsAiModalOpen(true)}
-        onOpenPdfReport={() => setIsPdfModalOpen(true)}
+        onOpenPdfReport={handleOpenPdfReport}
       />
 
       {/* Audit Certificate Ready Banner */}

@@ -29,7 +29,7 @@ export const AiSpecialistModal: React.FC<AiSpecialistModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputVal.trim()) return;
 
@@ -37,19 +37,34 @@ export const AiSpecialistModal: React.FC<AiSpecialistModalProps> = ({
     setMessages(prev => [...prev, { role: 'user', text: userQ }]);
     setInputVal('');
 
-    setTimeout(() => {
-      let aiResponse = '';
-      if (userQ.toLowerCase().includes('throttle') || userQ.toLowerCase().includes('trip') || userQ.toLowerCase().includes('fix')) {
-        aiResponse = `Autonomous recommendation: Triggering closed-loop Modbus interlock to drop RPM from 1800 to 300 RPM. This relieves mechanical stress on the Drive-End Bearing (BPFO 142.5 Hz harmonic) and prevents catastrophic fatigue rupture.`;
-        dispatchWebMCPAction('TRIGGER_EMERGENCY_THROTTLE', { targetRpm: 300, reason: 'AI Specialist Recommended Glide' }, 'agent', 'TRIGGER_EMERGENCY_THROTTLE');
-      } else if (userQ.toLowerCase().includes('audit') || userQ.toLowerCase().includes('report')) {
-        aiResponse = `Generating a certified ISO 17025 SHA-256 compliance maintenance ticket for asset TURBOPUMP-04...`;
-        dispatchWebMCPAction('GENERATE_PDF_REPORT', { equipmentId: 'TURBOPUMP-04' }, 'agent', 'generate_pdf_report');
-      } else {
-        aiResponse = `Analysis of 2D FFT spectrum shows dominant peak at ${dominantFreq.toFixed(1)} Hz. Sub-pixel phase EVM confirms localized radial displacement at Drive-End bearing housing. Recommended action: inspect lubrication grease and check alignment tolerances.`;
+    try {
+      const res = await fetch('http://localhost:8000/api/assistant/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: userQ })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.response) {
+          setMessages(prev => [...prev, { role: 'ai', text: data.response }]);
+          return;
+        }
       }
-      setMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
-    }, 600);
+    } catch (err) {
+      // fallback to smart deterministic diagnostics if network offline
+    }
+
+    let aiResponse = '';
+    if (userQ.toLowerCase().includes('throttle') || userQ.toLowerCase().includes('trip') || userQ.toLowerCase().includes('fix')) {
+      aiResponse = `Autonomous recommendation: Triggering closed-loop Modbus interlock to drop RPM from 1800 to 300 RPM. This relieves mechanical stress on the Drive-End Bearing (BPFO 142.5 Hz harmonic) and prevents catastrophic fatigue rupture.`;
+      dispatchWebMCPAction('TRIGGER_EMERGENCY_THROTTLE', { targetRpm: 300, reason: 'AI Specialist Recommended Glide' }, 'agent', 'TRIGGER_EMERGENCY_THROTTLE');
+    } else if (userQ.toLowerCase().includes('audit') || userQ.toLowerCase().includes('report')) {
+      aiResponse = `Generating a certified ISO 17025 SHA-256 compliance maintenance ticket for asset TURBOPUMP-04...`;
+      dispatchWebMCPAction('GENERATE_PDF_REPORT', { equipmentId: 'TURBOPUMP-04' }, 'agent', 'generate_pdf_report');
+    } else {
+      aiResponse = `Analysis of 2D FFT spectrum shows dominant peak at ${dominantFreq.toFixed(1)} Hz with RMS velocity ${vRms.toFixed(2)} mm/s. Sub-pixel phase EVM confirms localized radial displacement at Drive-End bearing housing. Recommended action: inspect lubrication grease and check alignment tolerances.`;
+    }
+    setMessages(prev => [...prev, { role: 'ai', text: aiResponse }]);
   };
 
   return (

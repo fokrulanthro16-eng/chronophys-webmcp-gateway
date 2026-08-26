@@ -12,7 +12,8 @@ async function capture() {
   const browser = await puppeteer.launch(launchOptions);
 
   const page = await browser.newPage();
-  await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+  await page.goto('http://localhost:3000', { waitUntil: 'domcontentloaded' });
+  await new Promise(r => setTimeout(r, 1500));
 
   // 1. Dashboard Preview
   console.log('Capturing dashboard-preview.png...');
