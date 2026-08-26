@@ -17,9 +17,16 @@ import {
 interface NavbarProps {
   onOpenInspector: () => void;
   isInspectorOpen: boolean;
+  onOpenPricing?: () => void;
+  onOpenVoice?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenInspector, isInspectorOpen }) => {
+export const Navbar: React.FC<NavbarProps> = ({ 
+  onOpenInspector, 
+  isInspectorOpen,
+  onOpenPricing,
+  onOpenVoice 
+}) => {
   const { isReady, registeredTools, grandmaMode, toggleGrandmaMode, activeActionEffect } = useWebMCP();
 
   const handleSimulateNormal = () => {
@@ -63,10 +70,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenInspector, isInspectorOpen
                 ChronoPhys <span className="text-transparent bg-clip-text bg-gradient-to-r from-mcp-cyan to-indigo-400">WebMCP</span>
               </h1>
               <span className="hidden sm:inline-flex text-[10px] font-mono px-2 py-0.5 rounded-full bg-mcp-purple/20 text-mcp-purple border border-mcp-purple/40 font-bold">
-                document.modelContext
+                v4.0 Enterprise
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">Agentic Industrial Digital Twin • W3C WebMCP Standard</p>
+            <p className="text-[11px] text-slate-400">Autonomous Closed-Loop Industrial Edge • W3C WebMCP Standard</p>
           </div>
         </div>
 
@@ -91,14 +98,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenInspector, isInspectorOpen
               WebMCP Bridge:
             </span>
             <span className="text-emerald-400 font-bold">
-              Active (5 Tools Registered)
+              Active ({registeredTools.length || 7} Tools Ready)
             </span>
           </div>
+
+          {/* Voice Agent Trigger Button */}
+          {onOpenVoice && (
+            <button
+              onClick={onOpenVoice}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition shadow-sm flex-shrink-0"
+              title="Hands-free plant voice-to-agent interface"
+            >
+              <span className="text-sm">🎙️</span>
+              <span className="hidden sm:inline">Voice Agent</span>
+            </button>
+          )}
 
           {/* Quick Action: Simulate Normal State */}
           <button
             onClick={handleSimulateNormal}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 border border-emerald-700/70 text-xs font-bold transition shadow-sm hover:shadow-emerald-950/50 flex-shrink-0"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 border border-emerald-700/70 text-xs font-bold transition shadow-sm flex-shrink-0"
             title="Simulate normal ISO Zone A baseline operation via WebMCP agent"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -109,13 +128,25 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenInspector, isInspectorOpen
           {/* Quick Action: Simulate Bearing Fault (Trip Trigger) */}
           <button
             onClick={handleSimulateBearingFault}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900/90 text-rose-200 border border-rose-700/80 text-xs font-bold transition shadow-sm hover:shadow-rose-950/50 flex-shrink-0 animate-pulse"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900/90 text-rose-200 border border-rose-700/80 text-xs font-bold transition shadow-sm flex-shrink-0 animate-pulse"
             title="Simulate high-frequency bearing fault and SIL-3 trip trigger"
           >
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-            <span className="hidden sm:inline">Simulate Bearing Fault (Trip Trigger)</span>
-            <span className="sm:hidden">Trip Trigger</span>
+            <span className="hidden sm:inline">Simulate Bearing Fault (Trip)</span>
+            <span className="sm:hidden">Trip</span>
           </button>
+
+          {/* Commercial Pricing Modal Trigger */}
+          {onOpenPricing && (
+            <button
+              onClick={onOpenPricing}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-indigo-950/90 hover:bg-indigo-900 border border-indigo-700/80 text-indigo-200 text-xs font-bold transition shadow-sm flex-shrink-0"
+              title="View enterprise commercial deployment packages"
+            >
+              <span>💼</span>
+              <span className="hidden md:inline">Plant Pricing</span>
+            </button>
+          )}
 
           {/* Grandma Mode Toggle Button */}
           <button

@@ -32,6 +32,8 @@ export type AgentActionType =
   | 'SUBMIT_FORM'
   | 'CLEAR_FORM'
   | 'TOGGLE_GRANDMA_MODE'
+  | 'TRIGGER_EMERGENCY_THROTTLE'
+  | 'GENERATE_MAINTENANCE_AUDIT'
   | 'RESET_STATE';
 
 export interface AutofillPayload {

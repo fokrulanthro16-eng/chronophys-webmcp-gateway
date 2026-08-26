@@ -8,6 +8,9 @@ import { AgentLiveTerminal } from '@/components/AgentLiveTerminal';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { BookingForm } from '@/components/BookingForm';
 import { AgentInspector } from '@/components/AgentInspector';
+import { RoiCostCard } from '@/components/RoiCostCard';
+import { VoiceAgentOverlay } from '@/components/VoiceAgentOverlay';
+import { EnterprisePricingModal } from '@/components/EnterprisePricingModal';
 import { useWebMCP } from '@/components/WebMCPProvider';
 import { CATALOG_DATA } from '@/lib/mock-data';
 import { 
@@ -27,7 +30,9 @@ import {
   Radio, 
   Sliders,
   Activity,
-  ShieldAlert
+  ShieldAlert,
+  Download,
+  FileCheck
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -39,7 +44,10 @@ export default function HomePage() {
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>('prod-001');
   const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(false);
+  const [isPricingOpen, setIsPricingOpen] = useState<boolean>(false);
+  const [isVoiceOpen, setIsVoiceOpen] = useState<boolean>(false);
   const [lastAutofillSource, setLastAutofillSource] = useState<string | null>(null);
+  const [activeAuditTicket, setActiveAuditTicket] = useState<{ id: string; hash: string; analyst: string } | null>(null);
 
   // Dynamic Telemetry State
   const [faultMode, setFaultMode] = useState<'normal' | 'bearing_fault' | 'unbalance' | 'misalignment'>('normal');
@@ -130,6 +138,32 @@ export default function HomePage() {
           break;
         }
 
+        case 'TRIGGER_EMERGENCY_THROTTLE': {
+          const target = payload.targetRpm || 300;
+          setShaftRpm(target);
+          setVRms(0.68);
+          setDominantFreq(5.0);
+          setFaultMode('normal');
+          setFormData(prev => ({
+            ...prev,
+            urgencyLevel: 'standard',
+            notes: `[AUTONOMOUS CLOSED-LOOP ACTION]: Modbus commanded VFD speed drop from 1800 RPM to ${target} RPM. Safe glide engaged.`
+          }));
+          setLastAutofillSource('Closed-Loop Modbus Agent');
+          break;
+        }
+
+        case 'GENERATE_MAINTENANCE_AUDIT': {
+          const ticket = {
+            id: payload.equipmentId || 'TURBOPUMP-04',
+            hash: payload.auditHash || `SHA256:${Date.now().toString(16)}`,
+            analyst: payload.analyst || 'ISO 18436 Cat-IV Agent'
+          };
+          setActiveAuditTicket(ticket);
+          setTimeout(() => setActiveAuditTicket(null), 8000);
+          break;
+        }
+
         case 'CLEAR_FORM': {
           setFormData({
             customerName: '',
@@ -138,6 +172,7 @@ export default function HomePage() {
             serviceCategory: 'all',
             urgencyLevel: 'standard',
             notes: '',
+            itemId: 'prod-001'
           });
           setLastAutofillSource(null);
           break;
@@ -151,6 +186,7 @@ export default function HomePage() {
           setFaultMode('normal');
           setVRms(0.42);
           setDominantFreq(30.0);
+          setShaftRpm(1800);
           setFormData({
             customerName: '',
             email: '',
@@ -161,6 +197,7 @@ export default function HomePage() {
             itemId: 'prod-001'
           });
           setLastAutofillSource(null);
+          setActiveAuditTicket(null);
           break;
         }
 
@@ -194,6 +231,7 @@ export default function HomePage() {
       serviceCategory: 'all',
       urgencyLevel: 'standard',
       notes: '',
+      itemId: 'prod-001'
     });
     setLastAutofillSource(null);
   };
@@ -204,8 +242,32 @@ export default function HomePage() {
       {/* Top Header Navbar */}
       <Navbar 
         onOpenInspector={() => setIsInspectorOpen(!isInspectorOpen)} 
-        isInspectorOpen={isInspectorOpen} 
+        isInspectorOpen={isInspectorOpen}
+        onOpenPricing={() => setIsPricingOpen(true)}
+        onOpenVoice={() => setIsVoiceOpen(true)}
       />
+
+      {/* Audit Certificate Ready Banner */}
+      {activeAuditTicket && (
+        <div className="mx-4 sm:mx-6 mt-3 p-3.5 bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border-2 border-emerald-400 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.35)] flex items-center justify-between font-mono text-xs animate-slideDown">
+          <div className="flex items-center space-x-3">
+            <FileCheck className="w-6 h-6 text-emerald-400" />
+            <div>
+              <span className="font-bold text-white">ISO 17025 SHA-256 AUDIT CERTIFICATE GENERATED</span>
+              <div className="text-[10px] text-slate-300">
+                Asset: <b className="text-mcp-cyan">{activeAuditTicket.id}</b> • Signature: <b className="text-emerald-300">{activeAuditTicket.hash}</b> • Signed by: {activeAuditTicket.analyst}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => window.print()}
+            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl flex items-center space-x-1.5 transition shadow"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Print Audit Receipt</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Full-Width Bento Grid Dashboard */}
       <main className="flex-1 w-full px-3 sm:px-5 py-3 space-y-4">
@@ -303,8 +365,13 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Column 3: Enterprise RFQ Dispatch & AI Agent Form (4 cols) */}
+          {/* Column 3: Enterprise ROI & RFQ Dispatch (4 cols) */}
           <div className="lg:col-span-4 space-y-4">
+            <RoiCostCard 
+              faultMode={faultMode}
+              vRms={vRms}
+            />
+
             <BookingForm
               selectedItem={selectedItem}
               formData={formData}
@@ -323,6 +390,18 @@ export default function HomePage() {
       <AgentInspector 
         isOpen={isInspectorOpen} 
         onClose={() => setIsInspectorOpen(false)} 
+      />
+
+      {/* Hands-Free Voice Agent Trigger Overlay */}
+      <VoiceAgentOverlay
+        isOpen={isVoiceOpen}
+        onClose={() => setIsVoiceOpen(false)}
+      />
+
+      {/* Enterprise Commercial Pricing Modal */}
+      <EnterprisePricingModal
+        isOpen={isPricingOpen}
+        onClose={() => setIsPricingOpen(false)}
       />
 
     </div>
