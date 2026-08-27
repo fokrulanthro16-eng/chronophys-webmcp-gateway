@@ -102,29 +102,32 @@ export default function HomePage() {
     return CATALOG_DATA.find(i => i.id === selectedItemId) || null;
   }, [selectedItemId]);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<Blob[]>([]);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<any>(null);
+  const recordedChunksRef = useRef<any[]>([]);
+  const mediaStreamRef = useRef<any>(null);
 
   const stopLiveRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try {
+    try {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
-      } catch (err) {
-        console.warn('Error stopping MediaRecorder:', err);
       }
+    } catch (err) {
+      console.warn('Non-blocking MediaRecorder stop:', err);
     }
-    if (mediaStreamRef.current) {
-      try {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      } catch (err) {}
-      mediaStreamRef.current = null;
-    }
+
+    try {
+      if (mediaStreamRef.current && typeof mediaStreamRef.current.getTracks === 'function') {
+        mediaStreamRef.current.getTracks().forEach((track: any) => track.stop());
+      }
+    } catch (err) {}
+    mediaStreamRef.current = null;
     setIsRecording(false);
     setRecordingSecondsLeft(0);
   };
 
   const handleTriggerRecordDemo = async () => {
+    if (typeof window === 'undefined') return;
+
     if (isRecording) {
       stopLiveRecording();
       return;
@@ -132,10 +135,10 @@ export default function HomePage() {
 
     try {
       recordedChunksRef.current = [];
-      let stream: MediaStream | null = null;
+      let stream: any = null;
 
       // 1. Attempt to capture from live user webcam
-      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
         try {
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
@@ -155,28 +158,41 @@ export default function HomePage() {
         }
       }
 
-      // 2. Headless/canvas stream fallback if webcam hardware is in use
-      if (!stream) {
-        const dummyCanvas = document.createElement('canvas');
-        dummyCanvas.width = 640;
-        dummyCanvas.height = 480;
-        const ctx = dummyCanvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = '#06090e';
-          ctx.fillRect(0, 0, 640, 480);
-          ctx.fillStyle = '#06b6d4';
-          ctx.font = '20px monospace';
-          ctx.fillText('ChronoPhys Live Optical Telemetry Feed', 40, 240);
+      // 2. Headless/canvas stream fallback if webcam hardware is in use or blocked
+      if (!stream && typeof document !== 'undefined') {
+        try {
+          const dummyCanvas = document.createElement('canvas');
+          dummyCanvas.width = 640;
+          dummyCanvas.height = 480;
+          const ctx = dummyCanvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#06090e';
+            ctx.fillRect(0, 0, 640, 480);
+            ctx.fillStyle = '#06b6d4';
+            ctx.font = '20px monospace';
+            ctx.fillText('ChronoPhys Live Optical Telemetry Feed', 40, 240);
+          }
+          if ((dummyCanvas as any).captureStream) {
+            stream = (dummyCanvas as any).captureStream(30);
+          }
+        } catch (canvasErr) {
+          console.warn('Canvas captureStream fallback error:', canvasErr);
         }
-        stream = (dummyCanvas as any).captureStream ? (dummyCanvas as any).captureStream(30) : null;
       }
 
       if (!stream) {
-        alert('Could not access live camera stream for recording.');
+        console.warn('Could not initialize live media stream for recording.');
         return;
       }
 
       mediaStreamRef.current = stream;
+
+      // Check if MediaRecorder is available in browser
+      const MediaRec = (window as any).MediaRecorder;
+      if (!MediaRec) {
+        console.warn('MediaRecorder API is not supported in this browser.');
+        return;
+      }
 
       // Supported MIME type determination
       const mimeTypes = [
@@ -185,42 +201,52 @@ export default function HomePage() {
         'video/webm',
         'video/mp4'
       ];
-      let selectedMimeType = 'video/webm';
+      let selectedMimeType = '';
       for (const mime of mimeTypes) {
-        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime)) {
+        if (MediaRec.isTypeSupported && MediaRec.isTypeSupported(mime)) {
           selectedMimeType = mime;
           break;
         }
       }
 
-      const recorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
+      const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
+      const recorder = new MediaRec(stream, recorderOptions);
       mediaRecorderRef.current = recorder;
 
-      recorder.ondataavailable = (event: BlobEvent) => {
-        if (event.data && event.data.size > 0) {
+      recorder.ondataavailable = (event: any) => {
+        if (event && event.data && event.data.size > 0) {
           recordedChunksRef.current.push(event.data);
         }
       };
 
       recorder.onstop = () => {
-        if (recordedChunksRef.current.length > 0) {
-          const blob = new Blob(recordedChunksRef.current, { type: selectedMimeType });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          const extension = selectedMimeType.includes('mp4') ? 'mp4' : 'webm';
-          a.download = `ChronoPhys_Live_Audit_Demo_${Date.now()}.${extension}`;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          }, 500);
-        }
-        if (mediaStreamRef.current) {
-          mediaStreamRef.current.getTracks().forEach(t => t.stop());
-          mediaStreamRef.current = null;
+        try {
+          if (recordedChunksRef.current.length > 0 && typeof window !== 'undefined' && typeof document !== 'undefined') {
+            const blob = new Blob(recordedChunksRef.current, { type: selectedMimeType || 'video/webm' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            const extension = selectedMimeType && selectedMimeType.includes('mp4') ? 'mp4' : 'webm';
+            a.download = `ChronoPhys_Live_Audit_Demo_${Date.now()}.${extension}`;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+              try {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+              } catch (e) {}
+            }, 500);
+          }
+        } catch (downloadErr) {
+          console.warn('Failed to compile and download recorded blob:', downloadErr);
+        } finally {
+          if (mediaStreamRef.current && typeof mediaStreamRef.current.getTracks === 'function') {
+            try {
+              mediaStreamRef.current.getTracks().forEach((t: any) => t.stop());
+            } catch (e) {}
+            mediaStreamRef.current = null;
+          }
         }
       };
 
@@ -236,7 +262,7 @@ export default function HomePage() {
       }).catch(() => {});
 
     } catch (e) {
-      console.error('Failed to initialize MediaRecorder:', e);
+      console.warn('MediaRecorder session caught error:', e);
       setIsRecording(false);
       setRecordingSecondsLeft(0);
     }
@@ -262,8 +288,10 @@ export default function HomePage() {
   // Clean up media streams on component unmount
   useEffect(() => {
     return () => {
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      if (mediaStreamRef.current && typeof mediaStreamRef.current.getTracks === 'function') {
+        try {
+          mediaStreamRef.current.getTracks().forEach((t: any) => t.stop());
+        } catch (e) {}
       }
     };
   }, []);
