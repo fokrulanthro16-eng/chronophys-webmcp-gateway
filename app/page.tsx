@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useWebMCP } from '@/components/WebMCPProvider';
 import { CATALOG_DATA } from '@/lib/mock-data';
 import { CatalogItem, CategoryType, AutofillPayload, WebMCPActionEventDetail } from '@/lib/types';
@@ -102,39 +102,154 @@ export default function HomePage() {
     return CATALOG_DATA.find(i => i.id === selectedItemId) || null;
   }, [selectedItemId]);
 
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+
+  const stopLiveRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (err) {
+        console.warn('Error stopping MediaRecorder:', err);
+      }
+    }
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      } catch (err) {}
+      mediaStreamRef.current = null;
+    }
+    setIsRecording(false);
+    setRecordingSecondsLeft(0);
+  };
+
   const handleTriggerRecordDemo = async () => {
-    if (isRecording) return;
-    setIsRecording(true);
-    setRecordingSecondsLeft(30);
+    if (isRecording) {
+      stopLiveRecording();
+      return;
+    }
 
     try {
-      await fetch('http://localhost:8000/api/record_demo', {
+      recordedChunksRef.current = [];
+      let stream: MediaStream | null = null;
+
+      // 1. Attempt to capture from live user webcam
+      if (typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              frameRate: { ideal: 30 }
+            },
+            audio: false
+          });
+        } catch (camErr) {
+          console.warn('High-res webcam access error, falling back to basic video constraint:', camErr);
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          } catch (fallbackErr) {
+            console.warn('Standard getUserMedia failed:', fallbackErr);
+          }
+        }
+      }
+
+      // 2. Headless/canvas stream fallback if webcam hardware is in use
+      if (!stream) {
+        const dummyCanvas = document.createElement('canvas');
+        dummyCanvas.width = 640;
+        dummyCanvas.height = 480;
+        const ctx = dummyCanvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#06090e';
+          ctx.fillRect(0, 0, 640, 480);
+          ctx.fillStyle = '#06b6d4';
+          ctx.font = '20px monospace';
+          ctx.fillText('ChronoPhys Live Optical Telemetry Feed', 40, 240);
+        }
+        stream = (dummyCanvas as any).captureStream ? (dummyCanvas as any).captureStream(30) : null;
+      }
+
+      if (!stream) {
+        alert('Could not access live camera stream for recording.');
+        return;
+      }
+
+      mediaStreamRef.current = stream;
+
+      // Supported MIME type determination
+      const mimeTypes = [
+        'video/webm;codecs=vp9',
+        'video/webm;codecs=vp8',
+        'video/webm',
+        'video/mp4'
+      ];
+      let selectedMimeType = 'video/webm';
+      for (const mime of mimeTypes) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime)) {
+          selectedMimeType = mime;
+          break;
+        }
+      }
+
+      const recorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        if (recordedChunksRef.current.length > 0) {
+          const blob = new Blob(recordedChunksRef.current, { type: selectedMimeType });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          const extension = selectedMimeType.includes('mp4') ? 'mp4' : 'webm';
+          a.download = `ChronoPhys_Live_Audit_Demo_${Date.now()}.${extension}`;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 500);
+        }
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(t => t.stop());
+          mediaStreamRef.current = null;
+        }
+      };
+
+      recorder.start(500);
+      setIsRecording(true);
+      setRecordingSecondsLeft(30);
+
+      // Notify Python backend logging asynchronously if running
+      fetch('http://localhost:8000/api/record_demo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ duration: 30 })
-      });
+      }).catch(() => {});
+
     } catch (e) {
-      console.warn('Backend recording triggered in autonomous fallback mode');
+      console.error('Failed to initialize MediaRecorder:', e);
+      setIsRecording(false);
+      setRecordingSecondsLeft(0);
     }
   };
 
-  // 30-Second Countdown Ticker & Automatic Video File Download
+  // 30-Second Countdown Ticker & Automatic Finish
   useEffect(() => {
     if (!isRecording) return;
     const interval = setInterval(() => {
       setRecordingSecondsLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          setIsRecording(false);
-          // Trigger automatic browser download of captured 30s demo
-          try {
-            const link = document.createElement('a');
-            link.href = 'http://localhost:8000/api/demo/download';
-            link.download = 'chronophys_30s_competition_demo.mp4';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          } catch (e) {}
+          stopLiveRecording();
           return 0;
         }
         return prev - 1;
@@ -143,6 +258,15 @@ export default function HomePage() {
 
     return () => clearInterval(interval);
   }, [isRecording]);
+
+  // Clean up media streams on component unmount
+  useEffect(() => {
+    return () => {
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
 
   const handleOpenPdfReport = async () => {
     setIsPdfModalOpen(true);
