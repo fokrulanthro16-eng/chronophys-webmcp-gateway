@@ -1,0 +1,45 @@
+# ==============================================================================
+# ChronoPhys-Vision 3.0: High-Performance Industrial Edge Container
+# Phase-Based Video Magnifier & Sub-Pixel FFT Vibration Telemetry Engine
+# ==============================================================================
+
+FROM python:3.11-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /app
+
+# Install system runtime & OpenCV dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install python packages
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application source code
+COPY backend/core/ ./core/
+COPY backend/server/ ./server/
+COPY backend/ui/ ./ui/
+COPY backend/main.py ./
+
+# Create persistent storage directories
+RUN mkdir -p data recordings
+
+# Expose FastAPI & WebSocket port
+EXPOSE 8000
+
+# Health check probe
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/healthz || exit 1
+
+# Default command: Web server mode with synthetic vibration generator
+CMD ["python", "main.py", "--mode", "web", "--source", "synthetic", "--port", "8000"]

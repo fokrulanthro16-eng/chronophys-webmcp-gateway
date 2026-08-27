@@ -1,0 +1,85 @@
+# ==============================================================================
+# ChronoPhys WebMCP Gateway & CV Rig: Production Orchestration
+# Services:
+# 1. Backend: Python 3.11 Computer Vision, Phase-EVM & FastDSP Telemetry
+# 2. Frontend: Next.js 14 WebMCP Industrial Edge Interface
+# 3. Redis: Sub-millisecond Telemetry Cache & Audit Event Bus
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Python Computer Vision & FastDSP Telemetry Engine
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: chronophys-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - CHRONOPHYS_ENV=production
+      - CHRONOPHYS_API_KEY=${CHRONOPHYS_API_KEY:-chronophys-enterprise-secret-2026}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - backend-data:/app/data
+      - backend-recordings:/app/recordings
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - chronophys-net
+
+  # ----------------------------------------------------------------------------
+  # 2. Next.js 14 WebMCP Gateway Frontend
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: chronophys-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - chronophys-net
+
+  # ----------------------------------------------------------------------------
+  # 3. Redis Telemetry Cache & Pub/Sub
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: chronophys-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - chronophys-net
+
+# ------------------------------------------------------------------------------
+# Persistent Storage Volumes & Network
+# ------------------------------------------------------------------------------
+volumes:
+  backend-data:
+  backend-recordings:
+  redis-data:
+
+networks:
+  chronophys-net:
+    driver: bridge

@@ -22,6 +22,8 @@ interface NavbarProps {
   onRecordDemo?: () => void;
   onOpenAiSpecialist?: () => void;
   onOpenPdfReport?: () => void;
+  userRole?: 'operator' | 'analyst' | 'manager';
+  onRoleChange?: (role: 'operator' | 'analyst' | 'manager') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
@@ -31,7 +33,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenVoice,
   onRecordDemo,
   onOpenAiSpecialist,
-  onOpenPdfReport
+  onOpenPdfReport,
+  userRole = 'analyst',
+  onRoleChange
 }) => {
   const { isReady, registeredTools, grandmaMode, toggleGrandmaMode, activeActionEffect } = useWebMCP();
 
@@ -60,6 +64,12 @@ export const Navbar: React.FC<NavbarProps> = ({
       itemId: 'prod-004'
     }, 'human-simulation', 'execute_action');
   };
+
+  const roles: Array<{ id: 'operator' | 'analyst' | 'manager'; label: string; icon: string }> = [
+    { id: 'operator', label: 'Operator', icon: '👷' },
+    { id: 'analyst', label: 'ISO Cat-IV Analyst', icon: '🔬' },
+    { id: 'manager', label: 'Plant Director', icon: '👔' }
+  ];
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/90 bg-slate-950/95 backdrop-blur-md">
@@ -107,6 +117,30 @@ export const Navbar: React.FC<NavbarProps> = ({
               Connected & Listening ({registeredTools.length || 12} Tools)
             </span>
           </div>
+
+          {/* Enterprise Role Switcher (RBAC) */}
+          {onRoleChange && (
+            <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5 text-[11px] font-mono font-bold flex-shrink-0">
+              {roles.map((r) => {
+                const isActive = userRole === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => onRoleChange(r.id)}
+                    className={`px-2.5 py-1 rounded-lg transition flex items-center space-x-1 ${
+                      isActive
+                        ? 'bg-mcp-purple text-white shadow-md'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                    title={`Switch Role: ${r.label}`}
+                  >
+                    <span>{r.icon}</span>
+                    <span className="hidden lg:inline">{r.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Record 30s Demo Button */}
           {onRecordDemo && (

@@ -55,6 +55,7 @@ export default function HomePage() {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [autoLockEnabled, setAutoLockEnabled] = useState<boolean>(true);
   const [alpha, setAlpha] = useState<number>(45);
+  const [userRole, setUserRole] = useState<'operator' | 'analyst' | 'manager'>('analyst');
   const [lastAutofillSource, setLastAutofillSource] = useState<string | null>(null);
   const [activeAuditTicket, setActiveAuditTicket] = useState<{ id: string; hash: string; analyst: string } | null>(null);
 
@@ -344,6 +345,8 @@ export default function HomePage() {
         onRecordDemo={handleTriggerRecordDemo}
         onOpenAiSpecialist={() => setIsAiModalOpen(true)}
         onOpenPdfReport={handleOpenPdfReport}
+        userRole={userRole}
+        onRoleChange={setUserRole}
       />
 
       {/* Audit Certificate Ready Banner */}
@@ -432,6 +435,7 @@ export default function HomePage() {
               autoLockEnabled={autoLockEnabled}
               onToggleAutoLock={() => setAutoLockEnabled(!autoLockEnabled)}
               isRecording={isRecording}
+              userRole={userRole}
             />
 
             <AgentLiveTerminal />

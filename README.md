@@ -1,12 +1,14 @@
-# ⚡ ChronoPhys WebMCP Gateway v4.0 (Enterprise Champion Edition)
+﻿# ⚡ ChronoPhys WebMCP Gateway v5.0 (Enterprise Production Architecture)
 
-> **Autonomous Closed-Loop Industrial Diagnostic & RFQ Platform** natively implementing the emerging W3C WebMCP (`document.modelContext`) standard with real-time Modbus VFD interlocks, ISO 17025 SHA-256 audit generation, and Grandma-Theory accessibility.
+> **Autonomous Closed-Loop Industrial Diagnostic & RFQ Platform** natively implementing the emerging W3C WebMCP (`document.modelContext`) standard with real-time Phase-Based Eulerian Video Magnification (EVM), Sub-Pixel FFT modal analysis, Modbus VFD interlocks, ISO 17025 SHA-256 audit generation, and Grandma-Theory accessibility.
 
+[![Docker Compose](https://img.shields.io/badge/Docker-Production_Orchestration-2496ED?style=for-the-badge&logo=docker)](docker-compose.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-14_App_Router-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![WebMCP Standard](https://img.shields.io/badge/Standard-WebMCP_W3C_v4.0-blue?style=for-the-badge)](https://github.com/fokrulanthro16-eng/chronophys-webmcp-gateway)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.11-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![WebMCP Standard](https://img.shields.io/badge/Standard-WebMCP_W3C_v5.0-blue?style=for-the-badge)](https://github.com/fokrulanthro16-eng/chronophys-webmcp-gateway)
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg?style=for-the-badge)](LICENSE)
 [![Safety Interlock](https://img.shields.io/badge/Safety-SIL--3_Modbus-red?style=for-the-badge)]()
-[![Accessibility](https://img.shields.io/badge/UX-Grandma_Theory-orange?style=for-the-badge)]()
+[![RBAC](https://img.shields.io/badge/Security-Enterprise_RBAC-purple?style=for-the-badge)]()
 
 ---
 
@@ -21,14 +23,30 @@
 
 ---
 
-## 💡 The Problem & The Closed-Loop WebMCP Solution
+## 🐳 Docker Production Orchestration
 
-* **Traditional Industrial SCADA Automation:** Brittle DOM scraping, disconnected manual dispatch workflows, and slow human response times leading to catastrophic machine bearing failures ($3,500/hr downtime).
-* **The WebMCP v4.0 Paradigm:** Instead of guessing UI elements, the web application explicitly registers **7 structured tools** using `document.modelContext`. AI agents (like ChatGPT browser, Chrome Agent, and edge controllers) execute deterministic API calls, reading machine telemetry, commanding **autonomous closed-loop VFD speed throttling**, and generating cryptographically signed ISO 17025 audit certificates.
+The entire enterprise architecture can be launched in one command:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/fokrulanthro16-eng/chronophys-webmcp-gateway.git
+cd chronophys-webmcp-gateway
+
+# 2. Build & Launch all microservices (Python CV Backend, Next.js Frontend, Redis)
+docker compose up --build -d
+```
+
+### Microservices Grid
+
+| Service | Port | Description | Healthcheck Probe |
+| :--- | :---: | :--- | :--- |
+| **`backend`** | `8000` | Python 3.11 Computer Vision, Phase-EVM, FFT & WebMCP Agent Server | `GET http://localhost:8000/healthz` |
+| **`frontend`** | `3000` | Next.js 14 App Router Industrial Edge Bento Dashboard | `GET http://localhost:3000/` |
+| **`redis`** | `6379` | Sub-millisecond Telemetry Cache & Audit Event Bus | In-Memory / AOF Persistence |
 
 ---
 
-## 🏗 Closed-Loop System Architecture
+## 🏗 System Architecture & Closed-Loop Flow
 
 ```mermaid
 flowchart TD
@@ -39,19 +57,21 @@ flowchart TD
             VoiceAgent["🎙 Hands-Free Factory Voice Agent"]
         end
 
-        subgraph Protocol_Bridge [" ⚡ WebMCP Bridge Layer (7 Registered Tools) "]
+        subgraph Protocol_Bridge [" ⚡ WebMCP Bridge Layer (12 Registered Tools) "]
             Bridge["WebMCP Engine (lib/webmcp-tools.js)"]
             EventBus["Custom Event Bus (webmcp-action)"]
         end
 
         subgraph Frontend_App [" 🖥 Next.js Enterprise Bento Grid (React 18) "]
-            EVMStream["60 FPS Optical Phase-EVM Video Canvas"]
+            EVMStream["Real MJPEG Dual Optical Stream (/video_feed_raw, /video_feed_phase)"]
             FFTSpectrum["2D FFT Modal Spectrum & Waveform v(t)"]
+            ODSTwin["3D ODS Modal Wireframe Mesh"]
             ROICard["Live Enterprise Downtime ROI Metric ($48.5k Saved)"]
             RFQForm["Industrial RFQ / Automation Form"]
             Inspector["Real-time Agent Activity Inspector"]
             Terminal["Cyberpunk Streaming JSON-RPC Agent Terminal"]
             GrandmaEngine["Grandma Accessibility Switcher"]
+            RBACSwitcher["Enterprise RBAC Switcher (Operator, Analyst, Director)"]
         end
 
         subgraph Closed_Loop_Edge [" ⚙ Closed-Loop Industrial Hardware Interlock "]
@@ -60,96 +80,73 @@ flowchart TD
         end
     end
 
+    subgraph Backend_Services [" 🐍 Python FastAPI Core Engine (Port 8000) "]
+        CVWorker["OpenCV Phase-Based Video Magnifier (Riesz Pyramid)"]
+        FFTWorker["Sub-Pixel Spatial FFT Analyzer"]
+        AuditDB["SQLite Time-Series & ISO 17025 Audit DB"]
+    end
+
     Agent_Layer -->|Discover Tools| Bridge
     VoiceAgent -->|Voice Triggers| Bridge
     Execution -->|JSON Payload| Bridge
     Bridge -->|Dispatch CustomEvent| EventBus
     EventBus -->|Reactivity Update| Frontend_App
     EventBus -->|Closed-Loop Command| Closed_Loop_Edge
+    Frontend_App -->|Telemetry Polling 200ms| Backend_Services
+    Backend_Services -->|Live MJPEG Stream| EVMStream
     Frontend_App -->|Visual Confirmation| Inspector
 ```
 
 ---
 
-## 🛠 Implemented WebMCP Tools (7 Enterprise Tools)
+## 🛠 Implemented WebMCP Tools (`document.modelContext`)
 
-| Tool Name | Description | Key Input Schema Parameters |
+| Tool Name | Action / Control | Parameters |
 | :--- | :--- | :--- |
-| `query_catalog` | Fetches components, sensors, and machine metrics | `keyword` (string), `category` (string), `maxResults` (number) |
-| `AUTOFILL_FORM` | Autonomous form fill for RFQ tickets & diagnostics | `customerName`, `company`, `urgencyLevel`, `notes`, `itemId` |
-| `TRIGGER_EMERGENCY_THROTTLE` | **Autonomous Closed-Loop VFD command** to drop RPM to safe glide upon Zone D trip | `targetRpm` (number), `reason` (string), `modbusRegister` |
-| `GENERATE_MAINTENANCE_AUDIT` | **Compiles telemetry into ISO 17025 SHA-256 signed audit certificate** | `equipmentId` (string), `signOffAnalyst` (string) |
-| `TOGGLE_GRANDMA_MODE` | Activates high-contrast, large-target accessibility mode | `{}` |
+| `record_demo` | Triggers 30-second live multi-modal diagnostic session | `duration` (number) |
+| `generate_pdf_report` | Compiles telemetry & downloads certified ISO 17025 audit certificate | `equipmentId` (string) |
+| `toggle_ai_specialist` | Opens/closes contextual Gemini AI Diagnostic Specialist modal | `open` (boolean), `initialQuery` (string) |
+| `auto_lock_components` | Toggles optical machine tracking bounding boxes | `enableTracking` (boolean) |
+| `set_evm_parameters` | Configures magnification gain ($\alpha$), frequency bandpass, and RPM | `alpha` (number), `shaftRpm` (number) |
+| `TRIGGER_EMERGENCY_THROTTLE` | Autonomous closed-loop Modbus command to drop motor RPM safely upon critical Zone-D vibration | `targetRpm` (number), `reason` (string) |
+| `GENERATE_MAINTENANCE_AUDIT` | Generates cryptographically signed ISO 17025 SHA-256 compliance ticket | `equipmentId` (string), `signOffAnalyst` (string) |
+| `query_catalog` | Searches sensor & edge digital twin equipment catalog | `keyword` (string), `category` (string) |
+| `AUTOFILL_FORM` | Autonomous form autofilling for RFQ & emergency tickets | `customerName`, `company`, `urgencyLevel`, `notes`, `itemId` |
+| `TOGGLE_GRANDMA_MODE` | High-contrast, large touch target accessibility mode | `{}` |
 | `execute_action` | Generic state dispatcher for custom UI interactions | `actionType` (string), `payload` (object) |
-| `get_agent_state` | Returns the current client telemetry & UI state to agent | `{}` |
+| `get_agent_state` | Returns client telemetry, ISO status, and active parameters | `{}` |
 
 ---
 
-## 👵 Grandma-Theory Accessibility Mode
+## 🛡️ Enterprise Security & Hardening
 
-Engineered to remove friction for non-technical users and domain operators:
-* **Ultra-high contrast color palette** for zero visual strain.
-* **Generously spaced 48px+ click targets** and clear visual telemetry indicators.
-* **Hands-free Voice-to-Agent trigger** for loud industrial shopfloors.
-* **Dual-mode operation**: complete manual fallback alongside AI autonomous agent execution.
+* **Role-Based Access Control (RBAC)**: Switch between **Plant Operator** (view-only), **Vibration Analyst** (optical calibration & 3D ODS tuning), and **Plant Director** (SIL-3 hardware trip override and audit sign-off).
+* **Resilient Video Streaming**: Automatic exponential backoff reconnection logic ($500\text{ms} \to 10\text{s}$) with connection health indicators.
+* **Structured JSON Logging**: All WebMCP tool executions, fault trips, and audit events are logged in structured JSON format.
+* **Health Check Probes**: Native Kubernetes-ready `/healthz` (liveness) and `/readyz` (readiness) endpoints.
+* **ISO 17025 Cryptographic Audits**: Audit tickets stored in SQLite with SHA-256 digital validation and QR verification.
 
 ---
 
-## 🧪 Local Testing & Verification
+## 🧪 Local Manual Setup
 
-### 1. Enable WebMCP testing in Google Chrome:
-1. Navigate to `chrome://flags/#enable-webmcp-testing`
-2. Set the flag to **Enabled** and relaunch Chrome.
-
-### 2. Clone & run locally:
-
+### 1. Python Backend
 ```bash
-git clone https://github.com/fokrulanthro16-eng/chronophys-webmcp-gateway.git
-cd chronophys-webmcp-gateway
-npm install
-npm run dev
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python main.py --mode web --source webcam --camera-id 0 --port 8000
 ```
 
-### 3. Open `http://localhost:3000` and open Chrome DevTools (`F12` -> Console).
-
-### 4. Run agent test commands:
-
-```javascript
-// 1. Inspect all 7 registered tools
-console.log(document.modelContext.getRegisteredTools());
-
-// 2. Trigger Autonomous Closed-Loop VFD Throttling (Drops to 300 RPM)
-await window.__webmcp.executeAction("TRIGGER_EMERGENCY_THROTTLE", {
-  targetRpm: 300,
-  reason: "Critical BPFO bearing outer-race vibration 7.85 mm/s (Zone D)"
-});
-
-// 3. Generate Cryptographic ISO 17025 Audit Certificate
-await window.__webmcp.executeAction("GENERATE_MAINTENANCE_AUDIT", {
-  equipmentId: "TURBOPUMP-04",
-  signOffAnalyst: "Dr. Gordon Freeman (ISO 18436 Cat-IV)"
-});
-
-// 4. Trigger Autonomous RFQ Form Filling
-await window.__webmcp.executeAction("AUTOFILL_FORM", {
-  customerName: "Dr. Gordon Freeman",
-  email: "g.freeman@blackmesa.gov",
-  company: "Black Mesa Research Facility",
-  urgencyLevel: "emergency",
-  notes: "Severe 3.5 Hz vibration detected on Sector C cooling turbopump.",
-  itemId: "prod-001"
-});
-
-// 5. Toggle Accessibility Mode
-await window.__webmcp.executeAction("TOGGLE_GRANDMA_MODE", {});
+### 2. Next.js Frontend
+```bash
+npm install
+npm run dev -- -p 3000
 ```
 
 ---
 
-## 🏆 Devpost Submission Summary
+## 📜 License & Hackathon Attribution
 
-* **Track:** The WebMCP Challenge (OpenAI & Devpost)
-* **Standard:** W3C `document.modelContext` Tool Registration (7 Production Tools)
-* **Key Innovation:** First Closed-Loop Autonomous Industrial Edge WebMCP Gateway with Modbus VFD Interlock & ISO 17025 Cryptographic Auditing.
-* **Commercial Pricing Tiers:** Integrated Starter ($4,950), Fleet Twin ($14,500/yr), and SIL-3 Retrofit ($35,000).
-* **Live Deployment:** Supported on Vercel, Cloudflare, and Render.
+Released under the **MIT License**. Created by **Fokrul Islam** for **"The WebMCP Challenge" (W3C Web Model Context Protocol Standard)**.
