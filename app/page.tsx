@@ -388,8 +388,17 @@ export default function HomePage() {
     }));
   };
 
-  const handleFormSubmit = (data: AutofillPayload) => {
+  const handleFormSubmit = async (data: AutofillPayload) => {
     console.log('[RFQ Submitted]:', data);
+    try {
+      await fetch('http://localhost:8000/api/submit_rfq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } catch (e) {
+      console.warn('Backend RFQ persistence log:', e);
+    }
   };
 
   const handleFormClear = () => {

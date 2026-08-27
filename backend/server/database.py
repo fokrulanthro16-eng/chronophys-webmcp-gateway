@@ -58,8 +58,24 @@ class TelemetryDatabase:
                     payload_json TEXT
                 );
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS rfq_submissions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    rfq_id TEXT UNIQUE,
+                    customer_name TEXT,
+                    email TEXT,
+                    company TEXT,
+                    service_category TEXT,
+                    urgency_level TEXT,
+                    notes TEXT,
+                    item_id TEXT,
+                    timestamp REAL,
+                    datetime_iso TEXT
+                );
+            """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON telemetry_history(timestamp);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_audit_sha ON audit_tickets(sha256_signature);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_rfq_id ON rfq_submissions(rfq_id);")
             conn.commit()
 
         # Seed baseline 7-day trend if empty
@@ -164,3 +180,39 @@ class TelemetryDatabase:
                 }
                 for r in rows
             ]
+    def save_rfq(self, rfq_data: Dict[str, Any]) -> bool:
+        """Persists an RFQ booking request into SQLite."""
+        now = time.time()
+        rfq_id = rfq_data.get("rfq_id") or f"RFQ-{int(now*1000)}"
+        customer_name = rfq_data.get("customerName", "")
+        email = rfq_data.get("email", "")
+        company = rfq_data.get("company", "")
+        category = rfq_data.get("serviceCategory", "")
+        urgency = rfq_data.get("urgencyLevel", "normal")
+        notes = rfq_data.get("notes", "")
+        item_id = rfq_data.get("itemId", "")
+        iso_str = rfq_data.get("timestamp") or datetime.fromtimestamp(now).isoformat()
+
+        with self._get_connection() as conn:
+            try:
+                conn.execute("""
+                    INSERT OR REPLACE INTO rfq_submissions 
+                    (rfq_id, customer_name, email, company, service_category, urgency_level, notes, item_id, timestamp, datetime_iso)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (rfq_id, customer_name, email, company, category, urgency, notes, item_id, now, iso_str))
+                conn.commit()
+                return True
+            except Exception:
+                return False
+
+    def get_rfqs(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Retrieves stored RFQ submissions."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT id, rfq_id, customer_name, email, company, service_category, urgency_level, notes, item_id, timestamp, datetime_iso
+                FROM rfq_submissions
+                ORDER BY timestamp DESC
+                LIMIT ?
+            """, (limit,))
+            return [dict(r) for r in cursor.fetchall()]

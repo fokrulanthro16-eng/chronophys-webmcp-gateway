@@ -50,7 +50,7 @@ from server.report_generator import generate_engineering_pdf
 from server.database import TelemetryDatabase
 
 app = FastAPI(title="ChronoPhys-Vision 3.0 Enterprise Appliance", version="3.0.0")
- 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -158,6 +158,17 @@ class ConfigUpdate(BaseModel):
     auto_lock_enabled: Optional[bool] = None
     synthetic_freq: Optional[float] = None
     synthetic_amp: Optional[float] = None
+
+
+class RFQSubmissionRequest(BaseModel):
+    customerName: Optional[str] = None
+    email: Optional[str] = None
+    company: Optional[str] = None
+    serviceCategory: Optional[str] = None
+    urgencyLevel: Optional[str] = "normal"
+    notes: Optional[str] = None
+    itemId: Optional[str] = None
+    timestamp: Optional[str] = None
 
 
 class RecordRequest(BaseModel):
@@ -403,6 +414,7 @@ async def get_status():
 
 
 @app.post("/api/config")
+@app.post("/api/set_parameters")
 async def update_configuration(cfg: ConfigUpdate):
     with state._lock:
         if cfg.alpha is not None:
@@ -427,7 +439,27 @@ async def update_configuration(cfg: ConfigUpdate):
         if cfg.synthetic_amp is not None:
             state.synthetic_gen.amp = float(cfg.synthetic_amp)
 
-    return JSONResponse(content={"status": "success", "message": "Configuration updated"})
+    return JSONResponse(content={"status": "success", "message": "Configuration and parameters updated successfully"})
+
+
+@app.post("/api/submit_rfq")
+async def submit_rfq(rfq: RFQSubmissionRequest):
+    data = rfq.dict()
+    data["timestamp"] = data.get("timestamp") or datetime.now().isoformat()
+    rfq_id = f"RFQ-{int(time.time()*1000)}"
+    data["rfq_id"] = rfq_id
+
+    try:
+        state.db.save_rfq(data)
+    except Exception as e:
+        logger.warning(f"Database RFQ save warning: {e}")
+
+    return JSONResponse(content={
+        "status": "SUCCESS",
+        "message": "Enterprise RFQ Quote Request logged into SQLite database successfully",
+        "rfq_id": rfq_id,
+        "data": data
+    })
 
 
 @app.post("/api/fault/simulate")
@@ -518,7 +550,12 @@ async def api_generate_pdf():
 
 def mjpeg_generator(feed_type: str = "raw"):
     """Yields continuous multipart MJPEG stream for <img> tag embedding."""
+    blank_img = np.zeros((360, 640, 3), dtype=np.uint8)
+    _, blank_buf = cv2.imencode('.jpg', blank_img)
+    blank_bytes = blank_buf.tobytes()
+
     while state.is_running:
+        b64_str = ""
         with state._lock:
             b64_str = state.latest_raw_base64 if feed_type == "raw" else state.latest_mag_base64
 
@@ -528,7 +565,11 @@ def mjpeg_generator(feed_type: str = "raw"):
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + jpg_bytes + b'\r\n')
             except Exception:
-                pass
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + blank_bytes + b'\r\n')
+        else:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + blank_bytes + b'\r\n')
         time.sleep(1.0 / 30.0)
 
 

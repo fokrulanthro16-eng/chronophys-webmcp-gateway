@@ -84,7 +84,7 @@ export const DualVisionCanvas: React.FC<DualVisionCanvasProps> = ({
   // Send real-time config updates to Python backend
   const handleAlphaChange = (newAlpha: number) => {
     onAlphaChange(newAlpha);
-    fetch('http://localhost:8000/api/config', {
+    fetch('http://localhost:8000/api/set_parameters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ alpha: newAlpha })
@@ -94,7 +94,7 @@ export const DualVisionCanvas: React.FC<DualVisionCanvasProps> = ({
   const handleAutoLockToggle = () => {
     const nextState = !autoLockEnabled;
     onToggleAutoLock();
-    fetch('http://localhost:8000/api/config', {
+    fetch('http://localhost:8000/api/set_parameters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ auto_lock_enabled: nextState })
@@ -104,7 +104,7 @@ export const DualVisionCanvas: React.FC<DualVisionCanvasProps> = ({
   const handleHeatmapToggle = () => {
     const next = !showHeatmap;
     setShowHeatmap(next);
-    fetch('http://localhost:8000/api/config', {
+    fetch('http://localhost:8000/api/set_parameters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ show_ar_heatmap: next })
@@ -115,7 +115,7 @@ export const DualVisionCanvas: React.FC<DualVisionCanvasProps> = ({
     setLocalLowHz(low);
     setLocalHighHz(high);
     if (onBandpassChange) onBandpassChange(low, high);
-    fetch('http://localhost:8000/api/config', {
+    fetch('http://localhost:8000/api/set_parameters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ low_hz: low, high_hz: high })
@@ -125,7 +125,7 @@ export const DualVisionCanvas: React.FC<DualVisionCanvasProps> = ({
   const handleRpmUpdate = (rpm: number) => {
     setLocalRpm(rpm);
     if (onRpmChange) onRpmChange(rpm);
-    fetch('http://localhost:8000/api/config', {
+    fetch('http://localhost:8000/api/set_parameters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nominal_rpm: rpm })
