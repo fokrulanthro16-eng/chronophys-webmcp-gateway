@@ -55,7 +55,7 @@ export interface WebMCPActionEventDetail {
   actionType: AgentActionType;
   payload: any;
   timestamp: number;
-  source: 'agent' | 'human-simulation' | 'devtools';
+  source: 'agent' | 'human-simulation' | 'devtools' | 'voice-agent';
   toolName?: string;
 }
 

@@ -24,6 +24,7 @@ interface NavbarProps {
   onOpenPdfReport?: () => void;
   userRole?: 'operator' | 'analyst' | 'manager';
   onRoleChange?: (role: 'operator' | 'analyst' | 'manager') => void;
+  recordingSecondsLeft?: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
@@ -35,7 +36,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAiSpecialist,
   onOpenPdfReport,
   userRole = 'analyst',
-  onRoleChange
+  onRoleChange,
+  recordingSecondsLeft = 0
 }) => {
   const { isReady, registeredTools, grandmaMode, toggleGrandmaMode, activeActionEffect } = useWebMCP();
 
@@ -142,15 +144,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           )}
 
-          {/* Record 30s Demo Button */}
+          {/* Record 30s Demo Button with Visual Countdown */}
           {onRecordDemo && (
             <button
               onClick={onRecordDemo}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-rose-950/90 hover:bg-rose-900 border border-rose-700/80 text-rose-200 text-xs font-bold transition shadow-sm flex-shrink-0"
+              disabled={recordingSecondsLeft > 0}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-sm flex-shrink-0 ${
+                recordingSecondsLeft > 0
+                  ? 'bg-rose-600 text-white border-rose-400 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.6)]'
+                  : 'bg-rose-950/90 hover:bg-rose-900 border-rose-700/80 text-rose-200'
+              }`}
               title="Record 30-second live multi-modal diagnostic session"
             >
-              <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
-              <span className="hidden sm:inline">Record 30s Demo</span>
+              <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+              <span>
+                {recordingSecondsLeft > 0 ? `Recording... ${recordingSecondsLeft}s` : 'Record 30s Demo'}
+              </span>
             </button>
           )}
 

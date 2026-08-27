@@ -100,8 +100,13 @@ export default function HomePage() {
     return CATALOG_DATA.find(i => i.id === selectedItemId) || null;
   }, [selectedItemId]);
 
+  const [recordingSecondsLeft, setRecordingSecondsLeft] = useState<number>(0);
+
   const handleTriggerRecordDemo = async () => {
+    if (isRecording) return;
     setIsRecording(true);
+    setRecordingSecondsLeft(30);
+
     try {
       await fetch('http://localhost:8000/api/record_demo', {
         method: 'POST',
@@ -111,12 +116,55 @@ export default function HomePage() {
     } catch (e) {
       console.warn('Backend recording triggered in autonomous fallback mode');
     }
-    setTimeout(() => setIsRecording(false), 30000);
   };
 
-  const handleOpenPdfReport = () => {
-    window.open('http://localhost:8000/api/generate_pdf', '_blank');
+  // 30-Second Countdown Ticker & Automatic Video File Download
+  useEffect(() => {
+    if (!isRecording) return;
+    const interval = setInterval(() => {
+      setRecordingSecondsLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setIsRecording(false);
+          // Trigger automatic browser download of captured 30s demo
+          try {
+            const link = document.createElement('a');
+            link.href = 'http://localhost:8000/api/demo/download';
+            link.download = 'chronophys_30s_competition_demo.mp4';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } catch (e) {}
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
+  const handleOpenPdfReport = async () => {
     setIsPdfModalOpen(true);
+    // Instant browser download for certified ISO 17025 PDF
+    try {
+      const response = await fetch('http://localhost:8000/api/generate_pdf');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'chronophys_iso17025_audit_report.pdf';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        window.open('http://localhost:8000/api/generate_pdf', '_blank');
+      }
+    } catch (err) {
+      window.open('http://localhost:8000/api/generate_pdf', '_blank');
+    }
   };
 
   // Poll real Python backend telemetry every 200ms
@@ -347,6 +395,7 @@ export default function HomePage() {
         onOpenPdfReport={handleOpenPdfReport}
         userRole={userRole}
         onRoleChange={setUserRole}
+        recordingSecondsLeft={recordingSecondsLeft}
       />
 
       {/* Audit Certificate Ready Banner */}
@@ -442,7 +491,9 @@ export default function HomePage() {
           </div>
 
           {/* Column 2: Live FFT Modal Telemetry, 3D ODS & Catalog (4 cols) */}
-          <div className="lg:col-span-4 space-y-4">
+          <div className={`lg:col-span-4 space-y-4 transition duration-300 ${
+            userRole === 'analyst' ? 'ring-1 ring-mcp-purple/50 rounded-2xl p-1 bg-purple-950/10 shadow-[0_0_20px_rgba(139,92,246,0.15)]' : ''
+          }`}>
             <LiveTelemetryPanel
               faultMode={faultMode}
               vRms={vRms}
@@ -480,7 +531,9 @@ export default function HomePage() {
           </div>
 
           {/* Column 3: Enterprise ROI & RFQ Dispatch (4 cols) */}
-          <div className="lg:col-span-4 space-y-4">
+          <div className={`lg:col-span-4 space-y-4 transition duration-300 ${
+            userRole === 'manager' ? 'ring-2 ring-emerald-500/70 rounded-2xl p-1 bg-emerald-950/15 shadow-[0_0_30px_rgba(16,185,129,0.25)]' : ''
+          }`}>
             <RoiCostCard 
               faultMode={faultMode}
               vRms={vRms}

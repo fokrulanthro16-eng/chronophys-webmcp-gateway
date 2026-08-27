@@ -1,4 +1,4 @@
-﻿# ⚡ ChronoPhys WebMCP Gateway v5.0 (Enterprise Production Architecture)
+# ⚡ ChronoPhys WebMCP Gateway v5.0 (Enterprise Production Architecture)
 
 > **Autonomous Closed-Loop Industrial Diagnostic & RFQ Platform** natively implementing the emerging W3C WebMCP (`document.modelContext`) standard with real-time Phase-Based Eulerian Video Magnification (EVM), Sub-Pixel FFT modal analysis, Modbus VFD interlocks, ISO 17025 SHA-256 audit generation, and Grandma-Theory accessibility.
 

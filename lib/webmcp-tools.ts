@@ -21,7 +21,7 @@ const registeredToolsMap = new Map<string, WebMCPToolDefinition>();
 export function dispatchWebMCPAction(
   actionType: AgentActionType, 
   payload: any = {}, 
-  source: 'agent' | 'human-simulation' | 'devtools' = 'agent',
+  source: 'agent' | 'human-simulation' | 'devtools' | 'voice-agent' = 'agent',
   toolName?: string
 ): void {
   if (typeof window === 'undefined') return;
