@@ -206,14 +206,19 @@ export const DualVisionCanvas: React.FC<DualVisionCanvasProps> = ({
         {/* Stream 1: Raw Optical Sensor Feed */}
         <div className="relative bg-black rounded-xl overflow-hidden border border-slate-800 aspect-[16/10] flex items-center justify-center shadow-inner">
           <img
-            key={`raw-${streamNonce}`}
-            src={`http://localhost:8000/video_feed_raw?t=${streamNonce}`}
-            alt="Raw Optical Stream"
-            className="w-full h-full object-cover"
+            src="http://localhost:8000/video_feed_raw"
+            alt="Raw Optical Rig"
+            className="w-full h-full object-cover rounded-lg"
             onLoad={handleStreamLoad}
-            onError={handleStreamError}
+            onError={(e) => {
+              handleStreamError();
+              setTimeout(() => {
+                const target = e.target as HTMLImageElement;
+                if (target) target.src = `http://localhost:8000/video_feed_raw?t=${Date.now()}`;
+              }, 2000);
+            }}
           />
-          <div className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-lg bg-slate-950/85 border border-slate-750 text-[10px] text-slate-200 flex items-center space-x-1.5">
+          <div className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-lg bg-slate-950/85 border border-slate-750 text-[10px] text-slate-200 flex items-center space-x-1.5 pointer-events-none">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
             <span>CAM-01 [RAW OPTICAL SENSOR]</span>
           </div>
@@ -222,14 +227,19 @@ export const DualVisionCanvas: React.FC<DualVisionCanvasProps> = ({
         {/* Stream 2: Phase-EVM Magnified Stream Feed */}
         <div className="relative bg-black rounded-xl overflow-hidden border border-slate-800 aspect-[16/10] flex items-center justify-center shadow-inner">
           <img
-            key={`phase-${streamNonce}`}
-            src={`http://localhost:8000/video_feed_phase?t=${streamNonce}`}
+            src="http://localhost:8000/video_feed_phase"
             alt="Phase EVM Stream"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-lg"
             onLoad={handleStreamLoad}
-            onError={handleStreamError}
+            onError={(e) => {
+              handleStreamError();
+              setTimeout(() => {
+                const target = e.target as HTMLImageElement;
+                if (target) target.src = `http://localhost:8000/video_feed_phase?t=${Date.now()}`;
+              }, 2000);
+            }}
           />
-          <div className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-lg bg-slate-950/85 border border-cyan-800/80 text-[10px] text-mcp-cyan flex items-center space-x-1.5">
+          <div className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-lg bg-slate-950/85 border border-cyan-800/80 text-[10px] text-mcp-cyan flex items-center space-x-1.5 pointer-events-none">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
             <span>CAM-02 [PHASE-EVM α={alpha}X]</span>
           </div>

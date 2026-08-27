@@ -50,6 +50,14 @@ from server.report_generator import generate_engineering_pdf
 from server.database import TelemetryDatabase
 
 app = FastAPI(title="ChronoPhys-Vision 3.0 Enterprise Appliance", version="3.0.0")
+ 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class PipelineState:

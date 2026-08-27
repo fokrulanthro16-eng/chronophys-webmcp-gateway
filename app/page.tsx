@@ -195,22 +195,10 @@ export default function HomePage() {
       }
 
       // Supported MIME type determination
-      const mimeTypes = [
-        'video/webm;codecs=vp9',
-        'video/webm;codecs=vp8',
-        'video/webm',
-        'video/mp4'
-      ];
-      let selectedMimeType = '';
-      for (const mime of mimeTypes) {
-        if (MediaRec.isTypeSupported && MediaRec.isTypeSupported(mime)) {
-          selectedMimeType = mime;
-          break;
-        }
-      }
-
-      const recorderOptions = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
-      const recorder = new MediaRec(stream, recorderOptions);
+      const mimeType = (MediaRec.isTypeSupported && MediaRec.isTypeSupported('video/webm;codecs=vp9')) 
+        ? 'video/webm;codecs=vp9' 
+        : (MediaRec.isTypeSupported && MediaRec.isTypeSupported('video/webm') ? 'video/webm' : '');
+      const recorder = mimeType ? new MediaRec(stream, { mimeType }) : new MediaRec(stream);
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event: any) => {
@@ -222,13 +210,12 @@ export default function HomePage() {
       recorder.onstop = () => {
         try {
           if (recordedChunksRef.current.length > 0 && typeof window !== 'undefined' && typeof document !== 'undefined') {
-            const blob = new Blob(recordedChunksRef.current, { type: selectedMimeType || 'video/webm' });
+            const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.style.display = 'none';
             a.href = url;
-            const extension = selectedMimeType && selectedMimeType.includes('mp4') ? 'mp4' : 'webm';
-            a.download = `ChronoPhys_Live_Audit_Demo_${Date.now()}.${extension}`;
+            a.download = `ChronoPhys_Live_Audit_Demo_${Date.now()}.webm`;
             document.body.appendChild(a);
             a.click();
             setTimeout(() => {
@@ -250,7 +237,7 @@ export default function HomePage() {
         }
       };
 
-      recorder.start(500);
+      recorder.start(1000);
       setIsRecording(true);
       setRecordingSecondsLeft(30);
 
