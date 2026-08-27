@@ -1,42 +1,40 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useWebMCP } from '@/components/WebMCPProvider';
+import { CATALOG_DATA } from '@/lib/mock-data';
+import { CatalogItem, CategoryType, AutofillPayload, WebMCPActionEventDetail } from '@/lib/types';
+import { dispatchWebMCPAction } from '@/lib/webmcp-tools';
+
 import { Navbar } from '@/components/Navbar';
 import { DualVisionCanvas } from '@/components/DualVisionCanvas';
+import { ExecutiveMetricsSuite } from '@/components/ExecutiveMetricsSuite';
 import { LiveTelemetryPanel } from '@/components/LiveTelemetryPanel';
 import { Ods3dWireframe } from '@/components/Ods3dWireframe';
-import { AgentLiveTerminal } from '@/components/AgentLiveTerminal';
+import { HistoricalTrendPanel } from '@/components/HistoricalTrendPanel';
 import { CatalogGrid } from '@/components/CatalogGrid';
 import { BookingForm } from '@/components/BookingForm';
+import { AgentLiveTerminal } from '@/components/AgentLiveTerminal';
 import { AgentInspector } from '@/components/AgentInspector';
-import { RoiCostCard } from '@/components/RoiCostCard';
 import { VoiceAgentOverlay } from '@/components/VoiceAgentOverlay';
 import { EnterprisePricingModal } from '@/components/EnterprisePricingModal';
 import { AiSpecialistModal } from '@/components/AiSpecialistModal';
 import { PdfReportModal } from '@/components/PdfReportModal';
-import { useWebMCP } from '@/components/WebMCPProvider';
-import { CATALOG_DATA } from '@/lib/mock-data';
+
 import { 
-  CatalogItem, 
-  CategoryType, 
-  AutofillPayload, 
-  WebMCPActionEventDetail 
-} from '@/lib/types';
-import { 
-  Bot, 
-  Sparkles, 
+  Lock, 
+  Flame, 
+  Activity, 
   Cpu, 
-  ShieldCheck, 
+  Download, 
+  FileCheck, 
   Zap, 
-  Terminal, 
+  Sparkles, 
   Layers, 
+  Sliders, 
   Radio, 
-  Sliders,
-  Activity,
-  ShieldAlert,
-  Download,
-  FileCheck,
-  Video
+  ShieldCheck, 
+  AlertTriangle 
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -53,8 +51,13 @@ export default function HomePage() {
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingSecondsLeft, setRecordingSecondsLeft] = useState<number>(0);
   const [autoLockEnabled, setAutoLockEnabled] = useState<boolean>(true);
-  const [alpha, setAlpha] = useState<number>(45);
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
+  const [alpha, setAlpha] = useState<number>(50);
+  const [lowHz, setLowHz] = useState<number>(1.0);
+  const [highHz, setHighHz] = useState<number>(6.0);
+  const [shaftRpm, setShaftRpm] = useState<number>(1800);
   const [userRole, setUserRole] = useState<'operator' | 'analyst' | 'manager'>('analyst');
   const [lastAutofillSource, setLastAutofillSource] = useState<string | null>(null);
   const [activeAuditTicket, setActiveAuditTicket] = useState<{ id: string; hash: string; analyst: string } | null>(null);
@@ -63,7 +66,6 @@ export default function HomePage() {
   const [faultMode, setFaultMode] = useState<'normal' | 'bearing_fault' | 'unbalance' | 'misalignment'>('normal');
   const [vRms, setVRms] = useState<number>(0.42);
   const [dominantFreq, setDominantFreq] = useState<number>(30.0);
-  const [shaftRpm, setShaftRpm] = useState<number>(1800);
 
   const [formData, setFormData] = useState<AutofillPayload>({
     customerName: '',
@@ -75,9 +77,9 @@ export default function HomePage() {
     itemId: 'prod-001'
   });
 
-  // Filter items based on active state
+  // Filter Catalog Data
   const filteredItems = useMemo(() => {
-    return CATALOG_DATA.filter((item) => {
+    return CATALOG_DATA.filter((item: CatalogItem) => {
       if (selectedCategory !== 'all' && item.category !== selectedCategory) {
         return false;
       }
@@ -99,8 +101,6 @@ export default function HomePage() {
   const selectedItem = useMemo(() => {
     return CATALOG_DATA.find(i => i.id === selectedItemId) || null;
   }, [selectedItemId]);
-
-  const [recordingSecondsLeft, setRecordingSecondsLeft] = useState<number>(0);
 
   const handleTriggerRecordDemo = async () => {
     if (isRecording) return;
@@ -280,14 +280,12 @@ export default function HomePage() {
         }
 
         case 'RECORD_DEMO': {
-          setIsRecording(true);
-          const dur = (payload.duration || 30) * 1000;
-          setTimeout(() => setIsRecording(false), dur);
+          handleTriggerRecordDemo();
           break;
         }
 
         case 'GENERATE_PDF_REPORT': {
-          setIsPdfModalOpen(true);
+          handleOpenPdfReport();
           break;
         }
 
@@ -302,8 +300,10 @@ export default function HomePage() {
         }
 
         case 'SET_EVM_PARAMETERS': {
-          if (payload.alpha !== undefined) setAlpha(payload.alpha);
-          if (payload.shaftRpm !== undefined) setShaftRpm(payload.shaftRpm);
+          if (payload.alpha) setAlpha(Number(payload.alpha));
+          if (payload.lowHz) setLowHz(Number(payload.lowHz));
+          if (payload.highHz) setHighHz(Number(payload.highHz));
+          if (payload.shaftRpm) setShaftRpm(Number(payload.shaftRpm));
           break;
         }
 
@@ -330,7 +330,7 @@ export default function HomePage() {
           setVRms(0.42);
           setDominantFreq(30.0);
           setShaftRpm(1800);
-          setAlpha(45);
+          setAlpha(50);
           setAutoLockEnabled(true);
           setFormData({
             customerName: '',
@@ -382,9 +382,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#080b11] text-slate-100 flex flex-col selection:bg-mcp-purple selection:text-white">
+    <div className="w-full min-h-screen px-6 py-4 bg-[#06090e] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white space-y-4">
       
-      {/* Top Header Navbar */}
+      {/* Top Header Navigation */}
       <Navbar 
         onOpenInspector={() => setIsInspectorOpen(!isInspectorOpen)} 
         isInspectorOpen={isInspectorOpen}
@@ -400,13 +400,13 @@ export default function HomePage() {
 
       {/* Audit Certificate Ready Banner */}
       {activeAuditTicket && (
-        <div className="mx-4 sm:mx-6 mt-3 p-3.5 bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border-2 border-emerald-400 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.35)] flex items-center justify-between font-mono text-xs animate-slideDown">
+        <div className="p-3.5 bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border-2 border-emerald-400 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.35)] flex items-center justify-between font-mono text-xs animate-slideDown">
           <div className="flex items-center space-x-3">
             <FileCheck className="w-6 h-6 text-emerald-400" />
             <div>
               <span className="font-bold text-white">ISO 17025 SHA-256 AUDIT CERTIFICATE GENERATED</span>
               <div className="text-[10px] text-slate-300">
-                Asset: <b className="text-mcp-cyan">{activeAuditTicket.id}</b> • Signature: <b className="text-emerald-300">{activeAuditTicket.hash}</b> • Signed by: {activeAuditTicket.analyst}
+                Asset: <b className="text-cyan-300">{activeAuditTicket.id}</b> • Signature: <b className="text-emerald-300">{activeAuditTicket.hash}</b> • Signed by: {activeAuditTicket.analyst}
               </div>
             </div>
           </div>
@@ -420,138 +420,143 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Main Full-Width Bento Grid Dashboard */}
-      <main className="flex-1 w-full px-3 sm:px-5 py-3 space-y-4">
-        
-        {/* Top Telemetry & WebMCP Status Ribbon */}
-        <section className="bg-slate-900/70 border border-slate-800/80 rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-lg font-mono text-xs">
-          
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-              <span className="font-bold text-slate-100">TELEMETRY RIG:</span>
-              <span className="text-emerald-400 font-bold">1800 RPM TURBOPUMP #4</span>
-            </div>
-            <span className="text-slate-600">|</span>
-            <div className="text-slate-400 hidden md:inline">
-              ISO Zone: <span className={faultMode === 'bearing_fault' ? 'text-rose-400 font-black' : 'text-emerald-400 font-bold'}>
-                {faultMode === 'bearing_fault' ? 'ZONE D (CRITICAL)' : 'ZONE A (OPTIMAL)'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-slate-400">DSP Modes:</span>
-            <button
-              onClick={() => { setFaultMode('normal'); setVRms(0.42); setDominantFreq(30.0); }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                faultMode === 'normal' ? 'bg-emerald-950 text-emerald-300 border border-emerald-700' : 'bg-slate-950 text-slate-400'
-              }`}
-            >
-              1X Baseline
-            </button>
-            <button
-              onClick={() => { setFaultMode('unbalance'); setVRms(2.45); setDominantFreq(30.0); }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                faultMode === 'unbalance' ? 'bg-amber-950 text-amber-300 border border-amber-700' : 'bg-slate-950 text-slate-400'
-              }`}
-            >
-              1X Unbalance
-            </button>
-            <button
-              onClick={() => { setFaultMode('bearing_fault'); setVRms(7.85); setDominantFreq(142.5); }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                faultMode === 'bearing_fault' ? 'bg-rose-950 text-rose-300 border border-rose-600 animate-pulse' : 'bg-slate-950 text-slate-400'
-              }`}
-            >
-              BPFO Fault (Trip)
-            </button>
-          </div>
-
-        </section>
-
-        {/* 3-Column Enterprise Bento Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-          
-          {/* Column 1: Dual Vision Optical Rig & Agent Terminal (4 cols) */}
-          <div className="lg:col-span-4 space-y-4">
-            <DualVisionCanvas 
-              faultMode={faultMode}
-              vRms={vRms}
-              dominantFreq={dominantFreq}
-              alpha={alpha}
-              onAlphaChange={setAlpha}
-              autoLockEnabled={autoLockEnabled}
-              onToggleAutoLock={() => setAutoLockEnabled(!autoLockEnabled)}
-              isRecording={isRecording}
-              userRole={userRole}
+      {/* Control Bar & Live Protocol HUD */}
+      <div className="flex flex-wrap items-center justify-between bg-slate-900/70 border border-slate-800/80 px-4 py-2.5 rounded-2xl shadow text-xs font-mono gap-3">
+        <div className="flex items-center space-x-4">
+          <label className="flex items-center space-x-1.5 cursor-pointer font-bold text-emerald-400">
+            <input 
+              type="checkbox" 
+              checked={autoLockEnabled} 
+              onChange={() => setAutoLockEnabled(!autoLockEnabled)}
+              className="w-4 h-4 rounded bg-slate-800 border-slate-700 text-emerald-500 cursor-pointer"
             />
-
-            <AgentLiveTerminal />
-          </div>
-
-          {/* Column 2: Live FFT Modal Telemetry, 3D ODS & Catalog (4 cols) */}
-          <div className={`lg:col-span-4 space-y-4 transition duration-300 ${
-            userRole === 'analyst' ? 'ring-1 ring-mcp-purple/50 rounded-2xl p-1 bg-purple-950/10 shadow-[0_0_20px_rgba(139,92,246,0.15)]' : ''
-          }`}>
-            <LiveTelemetryPanel
-              faultMode={faultMode}
-              vRms={vRms}
-              dominantFreq={dominantFreq}
-              shaftRpm={shaftRpm}
-            />
-
-            <Ods3dWireframe
-              faultMode={faultMode}
-              vRms={vRms}
-              shaftRpm={shaftRpm}
-            />
-
-            {/* Equipment Catalog Section */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-sm font-bold text-slate-200">Industrial Sensor & Digital Twin Catalog</h3>
-                <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                  {filteredItems.length} Available
-                </span>
-              </div>
-
-              <CatalogGrid
-                items={filteredItems}
-                keyword={keyword}
-                onKeywordChange={setKeyword}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-                selectedItemId={selectedItemId}
-                onSelectItem={handleSelectItem}
-                inStockOnly={inStockOnly}
-                onToggleInStock={setInStockOnly}
-              />
-            </div>
-          </div>
-
-          {/* Column 3: Enterprise ROI & RFQ Dispatch (4 cols) */}
-          <div className={`lg:col-span-4 space-y-4 transition duration-300 ${
-            userRole === 'manager' ? 'ring-2 ring-emerald-500/70 rounded-2xl p-1 bg-emerald-950/15 shadow-[0_0_30px_rgba(16,185,129,0.25)]' : ''
-          }`}>
-            <RoiCostCard 
-              faultMode={faultMode}
-              vRms={vRms}
-            />
-
-            <BookingForm
-              selectedItem={selectedItem}
-              formData={formData}
-              onFormChange={setFormData}
-              onSubmit={handleFormSubmit}
-              onClear={handleFormClear}
-              lastAutofillSource={lastAutofillSource}
-            />
-          </div>
-
+            <span>Auto-Lock Components</span>
+          </label>
+          <span className="text-slate-700">|</span>
+          <span className="text-cyan-300 font-bold">Phase-Based EVM (200x)</span>
+          <span className="text-slate-700">|</span>
+          <span className="text-amber-300 font-bold">AR Stress Heatmap</span>
         </div>
 
-      </main>
+        {/* Protocol, Coherence, ArUco & Smart Relay Pill HUD */}
+        <div className="flex items-center space-x-2 text-[11px] font-mono bg-slate-950/90 px-3 py-1 rounded-xl border border-slate-800">
+          <span className="text-amber-300 font-semibold">ArUco: AUTO</span>
+          <span className="text-slate-600">|</span>
+          <span className="text-sky-400">Anchor: STAB</span>
+          <span className="text-slate-600">|</span>
+          <span className="text-cyan-300 font-bold">γ²: 0.98</span>
+          <span className="text-slate-600">|</span>
+          <span className="text-slate-400">Modbus:5020</span>
+          <span className="text-slate-600">|</span>
+          <span className={faultMode === 'bearing_fault' ? 'text-rose-400 font-black animate-pulse' : 'text-emerald-400 font-bold'}>
+            {faultMode === 'bearing_fault' ? 'Relay: SAFE GLIDE' : 'Relay: ARMED'}
+          </span>
+        </div>
+      </div>
+
+      {/* 1. Top Section: Dual Optical Stream (8 cols) & Live Agent Terminal (4 cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        
+        {/* Dual Video Stream with Interactive Parameter Sliders (8 cols) */}
+        <div className="lg:col-span-8">
+          <DualVisionCanvas 
+            faultMode={faultMode}
+            vRms={vRms}
+            dominantFreq={dominantFreq}
+            alpha={alpha}
+            onAlphaChange={setAlpha}
+            autoLockEnabled={autoLockEnabled}
+            onToggleAutoLock={() => setAutoLockEnabled(!autoLockEnabled)}
+            isRecording={isRecording}
+            userRole={userRole}
+            lowHz={lowHz}
+            highHz={highHz}
+            onBandpassChange={(l, h) => { setLowHz(l); setHighHz(h); }}
+            nominalRpm={shaftRpm}
+            onRpmChange={setShaftRpm}
+          />
+        </div>
+
+        {/* Cyberpunk Streaming JSON-RPC Agent Terminal (4 cols) */}
+        <div className="lg:col-span-4">
+          <AgentLiveTerminal />
+        </div>
+
+      </div>
+
+      {/* 2. Middle Section: 5 Executive Metric Cards */}
+      <ExecutiveMetricsSuite 
+        faultMode={faultMode}
+        vRms={vRms}
+        dominantFreq={dominantFreq}
+        shaftRpm={shaftRpm}
+        userRole={userRole}
+      />
+
+      {/* 3. Live Reactive Telemetry Grid: 3D ODS Twin, PSD Spectrum & 7-Day Trend */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        {/* 3D ODS Digital Twin Wireframe */}
+        <Ods3dWireframe
+          faultMode={faultMode}
+          vRms={vRms}
+          shaftRpm={shaftRpm}
+        />
+
+        {/* 2D FFT Modal Power Spectrum */}
+        <LiveTelemetryPanel
+          faultMode={faultMode}
+          vRms={vRms}
+          dominantFreq={dominantFreq}
+          shaftRpm={shaftRpm}
+        />
+
+        {/* 7-Day Historical Vibration Trend */}
+        <HistoricalTrendPanel
+          faultMode={faultMode}
+          vRms={vRms}
+        />
+
+      </div>
+
+      {/* 4. Bottom Enterprise Automation Section: Equipment Catalog & RFQ Booking */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        
+        {/* Equipment Catalog Section (7 cols) */}
+        <div className="lg:col-span-7 space-y-3">
+          <div className="flex items-center justify-between px-1 font-mono">
+            <h3 className="text-sm font-bold text-slate-200">Industrial Sensor & Digital Twin Catalog</h3>
+            <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-2.5 py-0.5 rounded-lg border border-slate-800">
+              {filteredItems.length} Available
+            </span>
+          </div>
+
+          <CatalogGrid
+            items={filteredItems}
+            keyword={keyword}
+            onKeywordChange={setKeyword}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            selectedItemId={selectedItemId}
+            onSelectItem={handleSelectItem}
+            inStockOnly={inStockOnly}
+            onToggleInStock={setInStockOnly}
+          />
+        </div>
+
+        {/* Enterprise RFQ Booking Form (5 cols) */}
+        <div className="lg:col-span-5">
+          <BookingForm
+            selectedItem={selectedItem}
+            formData={formData}
+            onFormChange={setFormData}
+            onSubmit={handleFormSubmit}
+            onClear={handleFormClear}
+            lastAutofillSource={lastAutofillSource}
+          />
+        </div>
+
+      </div>
 
       {/* Slide-over Agent Activity Inspector */}
       <AgentInspector 
