@@ -449,9 +449,10 @@ async def get_demo_status():
 
 
 @app.get("/api/demo/download")
+@app.get("/api/download_demo_video")
 async def download_demo_video():
     filepath = state.recorder.canonical_filename
-    if os.path.exists(filepath):
+    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
         return FileResponse(filepath, media_type="video/mp4", filename="chronophys_30s_competition_demo.mp4")
     return JSONResponse(content={"error": "No 30-second recording available yet. Please click 'Record 30s Demo' first."}, status_code=404)
 
