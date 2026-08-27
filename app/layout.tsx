@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className="bg-slate-950 text-slate-100 antialiased min-h-screen selection:bg-mcp-purple selection:text-white">
+      <body className="bg-[#080b11] text-slate-100 antialiased min-h-screen selection:bg-purple-600 selection:text-white font-sans">
         <WebMCPProvider>
           {children}
         </WebMCPProvider>
